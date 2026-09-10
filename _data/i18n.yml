@@ -13,7 +13,6 @@ en:
     doing: Writing
     done: Published
   skip: Skip to content
-  edit: Edit this page on GitHub
 
 zh:
   title: 一起学
@@ -30,4 +29,3 @@ zh:
     doing: 写作中
     done: 已发布
   skip: 跳到正文
-  edit: 在 GitHub 上编辑本页
