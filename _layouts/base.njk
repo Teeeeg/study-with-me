@@ -15,7 +15,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% if title %}{{ title }} · {% endif %}{{ t.title }}</title>
   <meta name="description" content="{{ description or t.tagline }}">
-  <link rel="stylesheet" href="{{ '/assets/css/style.css' | url }}">
+  <link rel="stylesheet" href="{{ '/assets/css/style.css' | url }}?v={{ cssVersion }}">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='14'>📘</text></svg>">
   {% if altPage %}
   <link rel="alternate" hreflang="{{ 'zh-CN' if otherLang == 'zh' else 'en' }}" href="{{ altPage.url | url }}">

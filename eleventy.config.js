@@ -1,4 +1,6 @@
 import path from "node:path";
+import fs from "node:fs";
+import crypto from "node:crypto";
 import yaml from "js-yaml";
 import syntaxHighlight from "@11ty/eleventy-plugin-syntaxhighlight";
 
@@ -25,6 +27,16 @@ export default function (eleventyConfig) {
   eleventyConfig.addGlobalData("layout", "doc.njk");
   eleventyConfig.addGlobalData("lang", "en");
   eleventyConfig.addGlobalData("nav_order", 100);
+
+  // Pages serves CSS with max-age=600, so fingerprint the URL to avoid
+  // shipping a style fix that stays invisible for ten minutes.
+  eleventyConfig.addGlobalData("cssVersion", () =>
+    crypto
+      .createHash("sha1")
+      .update(fs.readFileSync("assets/css/style.css"))
+      .digest("hex")
+      .slice(0, 10),
+  );
 
   eleventyConfig.addCollection("docs", (api) =>
     api
