@@ -40,6 +40,11 @@ body {
   font-size: 16px;
   line-height: 1.7;
   -webkit-font-smoothing: antialiased;
+  /* Keeps the footer at the bottom of the viewport on short pages. */
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
 }
 
 a { color: var(--accent); text-decoration: none; }
@@ -129,6 +134,7 @@ a:hover { text-decoration: underline; }
 /* ---------- shell ---------- */
 
 .shell {
+  width: 100%;
   max-width: var(--maxw);
   margin: 0 auto;
   padding: 36px 24px 72px;
@@ -136,6 +142,7 @@ a:hover { text-decoration: underline; }
   grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
   gap: 48px;
   align-items: start;
+  flex: 1 0 auto;
 }
 
 .sidebar {
@@ -352,6 +359,8 @@ pre code { background: none; padding: 0; font-size: .855em; }
 /* ---------- footer ---------- */
 
 .footer {
+  flex: none;
+  margin-top: auto;
   border-top: 1px solid var(--border);
   background: var(--bg-soft);
 }
