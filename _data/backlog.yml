@@ -13,6 +13,11 @@
 
 - dir: /ai/fundamentals/
   items:
+    - status: doing
+      ref: attention
+      en: Attention Mechanism
+      zh: 注意力机制
+
     - status: done
       ref: weights-and-types
       en: Weight formats and data types
@@ -23,54 +28,10 @@
       en: Inside a downloaded model folder
       zh: 模型文件夹里都有什么
 
-    - status: doing
-      ref: attention
-      en: Attention, GQA, and the KV cache
-      zh: 注意力机制、GQA 与 KV 缓存
-      note:
-        en: Explain why context length costs memory, not just compute.
-        zh: 讲清楚上下文长度消耗的是内存，而不只是算力。
-
-    - status: todo
-      en: Tokenization — BPE, SentencePiece, and byte fallback
-      zh: 分词 —— BPE、SentencePiece 与字节回退
-
-    - status: todo
-      en: Positional encoding — RoPE, YARN, and context extension
-      zh: 位置编码 —— RoPE、YARN 与上下文扩展
-
     - status: todo
       en: Mixture of experts — routing, shared experts, and active parameters
       zh: 混合专家 —— 路由、共享专家与激活参数
-
-- title:
-    en: Inference and Serving
-    zh: 推理与部署
-  items:
+    
     - status: todo
-      en: Prefill vs. decode, and where the time actually goes
-      zh: Prefill 与 Decode，时间到底花在哪里
-
-    - status: todo
-      en: Batching — static, dynamic, and continuous
-      zh: 批处理 —— 静态、动态与连续批处理
-
-    - status: todo
-      en: Speculative decoding, draft models, and MTP
-      zh: 投机解码、草稿模型与 MTP
-
-    - status: todo
-      en: Quantization in practice — GPTQ, AWQ, FP8, and GGUF K-quants
-      zh: 量化实战 —— GPTQ、AWQ、FP8 与 GGUF K 系列量化
-
-- title:
-    en: Training and Fine-tuning
-    zh: 训练与微调
-  items:
-    - status: todo
-      en: LoRA and QLoRA — what actually gets updated
-      zh: LoRA 与 QLoRA —— 到底更新了什么
-
-    - status: todo
-      en: Mixed precision, loss scaling, and master weights
-      zh: 混合精度、损失缩放与主权重
+      en: How does Reasoning Model work
+      zh: 推理模型是如何工作的
