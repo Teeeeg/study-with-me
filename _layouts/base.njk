@@ -1,0 +1,90 @@
+{% import "clusters.njk" as ui %}
+
+{% set t = i18n[lang] %}
+{% set otherLang = 'zh' if lang == 'en' else 'en' %}
+{% set homePage = collections.all | byRefLang('home', lang) %}
+{% set backlogPage = collections.all | byRefLang('backlog', lang) %}
+{% set altPage = collections.all | byRefLang(ref, otherLang) %}
+{% set otherHome = collections.all | byRefLang('home', otherLang) %}
+{% set switchUrl = altPage.url if altPage else otherHome.url %}
+{% set navGroups = collections.docs | clusterGroups(lang, clusters) %}
+<!DOCTYPE html>
+<html lang="{{ 'zh-CN' if lang == 'zh' else 'en' }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% if title %}{{ title }} · {% endif %}{{ t.title }}</title>
+  <meta name="description" content="{{ description or t.tagline }}">
+  <link rel="stylesheet" href="{{ '/assets/css/style.css' | url }}">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='14'>📘</text></svg>">
+  {% if altPage %}
+  <link rel="alternate" hreflang="{{ 'zh-CN' if otherLang == 'zh' else 'en' }}" href="{{ altPage.url | url }}">
+  {% endif %}
+  {% if math %}
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [["$", "$"]],
+        displayMath: [["$$", "$$"]],
+        processEscapes: true
+      },
+      options: { skipHtmlTags: ["script", "noscript", "style", "textarea", "pre", "code"] }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js"></script>
+  {% endif %}
+</head>
+<body>
+  <a class="skip-link" href="#main">{{ t.skip }}</a>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="{{ homePage.url | url }}">
+        <span class="brand-mark">SW</span>
+        <span class="brand-name">{{ t.title }}</span>
+      </a>
+
+      <nav class="topnav" aria-label="{{ t.sections }}">
+        <a href="{{ homePage.url | url }}"{% if ref == 'home' %} aria-current="page"{% endif %}>{{ t.home }}</a>
+        {% if backlogPage %}
+        <a href="{{ backlogPage.url | url }}"{% if ref == 'backlog' %} aria-current="page"{% endif %}>{{ t.backlog }}</a>
+        {% endif %}
+      </nav>
+
+      <a class="lang-switch" href="{{ switchUrl | url }}"
+         title="{{ t.switch_title }}"
+         hreflang="{{ 'zh-CN' if otherLang == 'zh' else 'en' }}">{{ t.switch }}</a>
+    </div>
+  </header>
+
+  <div class="shell">
+    <aside class="sidebar">
+      <p class="sidebar-heading">{{ t.contents }}</p>
+      <nav aria-label="{{ t.contents }}">
+        {{ ui.nav(navGroups, page.url) }}
+      </nav>
+    </aside>
+
+    <main id="main" class="content">
+      {{ content | safe }}
+    </main>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <span>{{ t.title }}</span>
+      <a href="https://github.com/{{ site.repository }}/blob/{{ site.branch }}/{{ page.inputPath | replace('./', '') }}">{{ t.edit }}</a>
+    </div>
+  </footer>
+
+  <script>
+    // Wide reference tables need their own scroll container on narrow screens.
+    document.querySelectorAll(".content table").forEach(function (table) {
+      var wrap = document.createElement("div");
+      wrap.className = "table-wrap";
+      table.parentNode.insertBefore(wrap, table);
+      wrap.appendChild(table);
+    });
+  </script>
+</body>
+</html>

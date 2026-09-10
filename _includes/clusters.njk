@@ -1,0 +1,34 @@
+{% macro nav(groups, currentUrl) %}
+  {% for group in groups %}
+  <div class="nav-cluster">
+    <h3 class="nav-cluster-title">{{ group.title }}</h3>
+    <ul class="nav-list">
+      {% for item in group.items %}
+      <li>
+        <a href="{{ item.url | url }}"{% if item.url == currentUrl %} aria-current="page"{% endif %}>{{ item.data.title }}</a>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endfor %}
+{% endmacro %}
+
+{% macro cards(groups) %}
+  {% for group in groups %}
+  <section class="cluster">
+    <h2 class="cluster-title">
+      {% if group.icon %}<span class="cluster-icon" aria-hidden="true">{{ group.icon }}</span>{% endif %}
+      {{ group.title }}
+    </h2>
+    {% if group.summary %}<p class="cluster-summary">{{ group.summary }}</p>{% endif %}
+    <ul class="cluster-list">
+      {% for item in group.items %}
+      <li>
+        <a href="{{ item.url | url }}">{{ item.data.title }}</a>
+        {% if item.data.description %}<span class="item-desc">{{ item.data.description }}</span>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endfor %}
+{% endmacro %}

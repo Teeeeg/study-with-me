@@ -1,0 +1,31 @@
+---
+layout: base.njk
+---
+{% set t = i18n[lang] %}
+{% set stats = backlog | backlogStats %}
+{% set groups = backlog | backlogGroups(lang, clusters, collections.all) %}
+
+<article class="prose">
+  <h1>{{ t.backlog }}</h1>
+  <p>{{ t.backlog_intro }}</p>
+  <p class="backlog-count">{{ stats.done }} / {{ stats.total }} · {{ t.status.done }}</p>
+
+  {{ content | safe }}
+
+  {% for group in groups %}
+  <section class="backlog-group">
+    <h2>{{ group.title }}</h2>
+    <ul class="backlog-list">
+      {% for item in group.items %}
+      <li class="backlog-item is-{{ item.status }}">
+        <span class="badge badge-{{ item.status }}">{{ t.status[item.status] }}</span>
+        <span class="backlog-text">
+          {% if item.page %}<a href="{{ item.page.url | url }}">{{ item.text }}</a>{% else %}{{ item.text }}{% endif %}
+          {% if item.note %}<span class="backlog-note">{{ item.note }}</span>{% endif %}
+        </span>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endfor %}
+</article>

@@ -1,0 +1,18 @@
+# Clusters are the sections of the site. One cluster == one folder of notes.
+#
+# To add a new section:
+#   1. create the folder, e.g. `systems/networking/`
+#   2. add `foo.md` (English) and `foo.zh-CN.md` (Chinese) inside it
+#   3. add an entry below to give it a title and a position in the nav
+#
+# Step 3 is optional. A folder that is not listed here still appears in the
+# nav, using its folder name as the title, after all the listed clusters.
+
+- dir: /ai/fundamentals/
+  icon: "◆"
+  title:
+    en: AI Fundamentals
+    zh: AI 基础
+  summary:
+    en: How models are stored, packaged, loaded, and run.
+    zh: 模型如何存储、打包、加载与运行。

@@ -1,378 +1,334 @@
-# What Is Inside an LLM Model Repository?
+---
+title: Inside a Downloaded Model Folder
+description: Every file in a real Hugging Face repo, using DeepSeek-V4-Flash as the example.
+lang: en
+ref: weights-files
+nav_order: 2
+---
 
-A downloadable model is usually a **package of related files**, not one file.
-The package has four essential jobs:
+# Inside a Downloaded Model Folder
 
-| Part | Question it answers | Typical files |
-| --- | --- | --- |
-| **Weights** | What values did the model learn? | `model.safetensors`, weight shards, or a `.gguf` file |
-| **Configuration** | What architecture should be built around those values? | `config.json` |
-| **Tokenizer or processor** | How is user input converted to model inputs and back? | `tokenizer.json`, `tokenizer.model`, or processor files |
-| **Runtime code** | How are the layers and forward pass implemented? | Usually supplied by Transformers, llama.cpp, or another runtime |
+A downloaded model is a **package**, not a single file. The weights are only one
+part of it. The rest describes how to build the model class, how to turn text
+into token IDs, and how to format a prompt.
 
-Generation defaults, documentation, licenses, and training state may also be
-included. A weight file alone is therefore not always enough to run a model.
+This page walks through a real repository,
+[`deepseek-ai/DeepSeek-V4-Flash-0731`](https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-0731),
+and then covers the files you will meet in other repositories.
 
-## Example: DeepSeek-V4-Flash
-
-The official [`deepseek-ai/DeepSeek-V4-Flash`](https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash)
-release is a text-generation model distributed with sharded SafeTensors weights.
-Its repository is a useful example because the model package must describe not
-only many weight shards, but also a DeepSeek V4 architecture and FP8 weight
-representation. The abbreviated tree below intentionally omits the exact shard
-count because repositories can be revised:
+## The Example Repository
 
 ```text
-DeepSeek-V4-Flash/
-|-- README.md
-|-- LICENSE
-|-- config.json
-|-- generation_config.json
-|-- model.safetensors.index.json
-|-- model-00001-of-00NNN.safetensors
-|-- ...
-|-- model-00NNN-of-00NNN.safetensors
-|-- tokenizer.json
-|-- tokenizer_config.json
-`-- ...
+DeepSeek-V4-Flash-0731/                        # 167 GB total
+├── .gitattributes                             #   1.52 kB
+├── LICENSE                                    #   1.08 kB  (MIT)
+├── README.md                                  #   7.24 kB  (model card)
+├── config.json                                #   1.89 kB
+├── generation_config.json                     #    170  B
+├── model-00001-of-00048.safetensors           #   1.06 GB
+├── model-00002-of-00048.safetensors           #   3.57 GB
+├── ...                                        #   ~3.6 GB each
+├── model-00048-of-00048.safetensors
+├── model.safetensors.index.json               #   5.60 MB
+├── tokenizer.json                             #   6.37 MB
+├── tokenizer_config.json
+├── encoding/                                  # prompt encoding (no Jinja template)
+│   ├── README.md
+│   ├── encoding_dsv4.py
+│   ├── test_encoding_dsv4.py
+│   └── tests/test_input_*.json
+└── inference/                                 # reference local-inference code
+    ├── README.md
+    ├── config.json
+    ├── convert.py
+    ├── generate.py
+    └── kernel.py
 ```
 
-`00NNN` is a placeholder, not the published shard count. Consult
-`model.safetensors.index.json` for the files required by the revision being
-downloaded. File names are conventions rather than a universal standard, so a
-repository may omit some files or include additional code and metadata.
+Two things are already visible:
 
-### File-by-File Meaning
+- The 48 weight shards are more than 99% of the download. Everything that makes
+	those tensors usable fits in a few megabytes.
+- There is **no** `chat_template.jinja` and no `.bin` file. Both are deliberate
+	choices by the publisher, explained below.
 
-| File | What it contains | When it is used |
+## Quick Reference
+
+| File | Category | Required to run? | In this repo? | What it does |
+| --- | --- | --- | :---: | --- |
+| `*.safetensors` | Weights | Yes | Yes | The actual tensors (parameters) |
+| `model.safetensors.index.json` | Weights | Yes, if sharded | Yes | Maps each tensor name to the shard that contains it |
+| `pytorch_model*.bin` | Weights | Yes, if no SafeTensors | No | Legacy pickle-based weight files |
+| `*.gguf` | Weights + metadata | Yes | No | Self-contained quantized model for GGML runtimes |
+| `config.json` | Architecture | Yes | Yes | Model class, layer sizes, and quantization settings |
+| `generation_config.json` | Inference | No | Yes | Default sampling and stopping settings |
+| `tokenizer.json` | Tokenizer | Yes | Yes | Fast tokenizer: vocabulary plus merge and normalization rules |
+| `tokenizer_config.json` | Tokenizer | Yes | Yes | Tokenizer class, special tokens, and context length |
+| `tokenizer.model` / `vocab.json` + `merges.txt` | Tokenizer | Sometimes | No | Slow or legacy tokenizer sources |
+| `special_tokens_map.json` | Tokenizer | No | No | Names the BOS, EOS, PAD, and UNK tokens |
+| `chat_template.jinja` | Prompting | No, but important for chat | No | Formats messages into the model's expected prompt string |
+| `preprocessor_config.json` | Multimodal | Yes, for vision/audio | No | Image or audio preprocessing parameters |
+| `adapter_model.safetensors` + `adapter_config.json` | Fine-tune | Yes, for LoRA | No | A small delta applied on top of a base model |
+| `README.md`, `LICENSE`, `.gitattributes` | Metadata | No | Yes | Documentation, terms of use, and Git LFS rules |
+
+## Weight Files
+
+### `model-000NN-of-00048.safetensors`
+
+The parameters themselves. A large model is **sharded** so that each file stays
+at a practical size and can be downloaded, resumed, cached, and memory-mapped
+independently. Here shard 1 is 1.06 GB (embeddings and the first dense layers)
+and the remaining 47 are about 3.6 GB each.
+
+The name `model-00002-of-00048.safetensors` means "shard 2 of 48". Shards are
+not layer groups you can pick from — you need all 48.
+
+Internally the file is a JSON header plus a raw tensor buffer, so a loader can
+read the header and then map only the tensors it needs, without executing any
+code from the file.
+
+> **Why only 167 GB for a ~300B-parameter model?** The `quantization_config`
+> block in `config.json` says the checkpoint is stored in FP8 (`e4m3`) with
+> 128x128 weight blocks, and `expert_dtype` is `fp4`, so the MoE experts are
+> stored at 4 bits. The average is roughly 4-5 bits per parameter rather than
+> the 16 bits a BF16 checkpoint would use.
+
+### `model.safetensors.index.json`
+
+The shard map, 5.6 MB here because a 43-layer MoE model with 256 experts per
+layer has an enormous number of individually named tensors. It has two parts:
+
+- `metadata.total_size` — total bytes of all weights, useful for a memory check.
+- `weight_map` — one entry per tensor, such as
+	`"model.layers.20.mlp.experts.7.down_proj.weight": "model-00023-of-00048.safetensors"`.
+
+Without this index a loader would have to open all 48 shards to find a tensor.
+If it is missing or stale, loading fails even when every shard is present.
+
+### Files this repo does *not* have
+
+- **`pytorch_model*.bin`** — the older PyTorch pickle format, with
+	`pytorch_model.bin.index.json` as its index. Many repositories still ship both;
+	when they do you only need the SafeTensors set. Pickle files can execute
+	arbitrary code on load, so only load `.bin` weights from sources you trust.
+- **`*.gguf`** — the single self-describing file used by `llama.cpp`, Ollama,
+	and LM Studio. GGUF embeds the architecture metadata, tokenizer, and chat
+	template inside the weight file, which is why a GGUF download needs no
+	`config.json` or `tokenizer.json`. The suffix encodes the quantization, such as
+	`Q4_K_M`. GGUF builds are produced by converting a checkpoint like this one,
+	usually by the community rather than the original publisher.
+
+## `config.json`
+
+Tells the framework **what to build** before any weight is loaded. Real values
+from this repository:
+
+| Field | Value | Meaning |
 | --- | --- | --- |
-| `model-xxxxx-of-yyyyy.safetensors` | Named tensors containing the learned parameters; DeepSeek-V4-Flash uses many shards | Loaded for inference or fine-tuning; every shard named by the index is part of the full checkpoint |
-| `model.safetensors.index.json` | A map from each tensor name to the shard that stores it | Lets a loader find tensors without scanning or loading every shard first |
-| `config.json` | Architecture type and dimensions, such as layer count, hidden size, attention heads, vocabulary size, and activation | Used to construct the model object before filling it with weights |
-| `tokenizer.json` | A complete fast-tokenizer definition: vocabulary, tokenization model, normalization, and pre/post-processing rules | Converts text to token IDs and token IDs back to text |
-| `tokenizer_config.json` | Tokenizer options, model input limits, special-token behavior, and often the chat template | Controls how the tokenizer is instantiated and how chat messages are formatted |
-| `special_tokens_map.json` | Names the beginning, end, padding, unknown, and other special tokens | Older or compatibility-oriented tokenizer loading; newer repositories may keep the same data elsewhere |
-| `generation_config.json` | Suggested decoding defaults such as end-token IDs, sampling settings, or beam-search settings | Read by generation APIs; callers can override every value |
-| `README.md` | Model card: intended use, examples, limitations, evaluation, and provenance | Read by people; it is not required for tensor computation |
-| `LICENSE` | Legal terms for using and redistributing the model | Must be checked before use or distribution; it is not loaded by the model runtime |
+| `architectures` | `["DeepseekV4ForCausalLM"]` | The model class to instantiate |
+| `model_type` | `deepseek_v4` | Short id used for auto-class lookup |
+| `transformers_version` | `4.57.1` | The version the config was written for |
+| `hidden_size` | `4096` | Residual stream width |
+| `num_hidden_layers` | `43` | Depth |
+| `num_attention_heads` / `num_key_value_heads` | `64` / `1` | Unequal values mean grouped-query attention; one KV head is multi-query, which shrinks the KV cache |
+| `vocab_size` | `129280` | Embedding rows; must match the tokenizer |
+| `max_position_embeddings` | `1048576` | 1M-token context |
+| `rope_theta`, `rope_scaling` | `10000`, YARN `factor: 16` over `original_max_position_embeddings: 65536` | Trained at 64K, extended to 1M by position-embedding scaling |
+| `torch_dtype` | `bfloat16` | The dtype tensors are dequantized into at runtime |
+| `quantization_config` | `quant_method: fp8`, `fmt: e4m3`, `weight_block_size: [128, 128]` | How to read the stored low-bit weights |
+| `tie_word_embeddings` | `false` | The output head has its own matrix |
 
-The index is small JSON data compared with the weights. This deliberately
-abbreviated DeepSeek-V4-Flash-style example omits the release-specific shard
-count and most tensor entries:
+MoE-specific fields describe the routing:
+
+| Field | Value | Meaning |
+| --- | --- | --- |
+| `n_routed_experts` | `256` | Experts per MoE layer |
+| `n_shared_experts` | `1` | Expert always applied, regardless of routing |
+| `num_experts_per_tok` | `6` | Experts activated per token — why only a fraction of the parameters run per token |
+| `moe_intermediate_size` | `2048` | Width of each expert |
+| `expert_dtype` | `fp4` | Experts are stored at 4 bits |
+
+A few fields only make sense for this architecture:
+`num_nextn_predict_layers`, `dspark_target_layer_ids`, and `dspark_block_size`
+belong to the **DSpark speculative-decoding module** that ships inside the same
+checkpoint. That is why the vLLM and SGLang commands in the model card enable
+speculative decoding without pointing at a separate draft model.
+
+> If `config.json` and the weights disagree, loading fails with shape mismatch
+> errors. Edit it only when you know exactly what you are changing — the model
+> card here explicitly tells you to remove `expert_dtype` if you want FP8
+> experts instead of FP4.
+
+## `generation_config.json`
+
+Default **decoding** settings, separate from the architecture. The whole file is
+170 bytes:
 
 ```json
 {
-  "weight_map": {
-		"model.embed_tokens.weight": "model-00001-of-00NNN.safetensors",
-		"model.layers.0.self_attn.q_a_proj.weight": "model-00001-of-00NNN.safetensors",
-		"model.layers.0.self_attn.kv_proj.weight": "model-00001-of-00NNN.safetensors",
-		"model.layers.3.mlp.experts.gate_up_proj": "model-0000X-of-00NNN.safetensors",
-		"model.norm.weight": "model-00NNN-of-00NNN.safetensors",
-		"lm_head.weight": "model-00NNN-of-00NNN.safetensors"
-  }
+  "bos_token_id": 0,
+  "eos_token_id": 1,
+  "do_sample": true,
+  "temperature": 1.0,
+  "top_p": 1.0
 }
 ```
 
-A real index also has `metadata.total_size`, the total tensor data size in bytes.
-The exact tensor names and shard boundaries depend on the model revision and
-exporting library; use the actual index rather than constructing shard names
-from this illustration.
+Other repositories add `top_k`, `max_new_tokens`, or `repetition_penalty` here.
+`eos_token_id` matters most in practice: a wrong value is a common cause of a
+model that never stops generating. Note that these defaults are not always the
+publisher's recommendation — the model card asks for `top_p = 0.95` in agentic
+scenarios. Your runtime's own settings override this file.
 
-## What Is Inside a Weight File?
+## Tokenizer Files
 
-A SafeTensors checkpoint is conceptually a **state dictionary**: tensor names
-mapped to multidimensional arrays. For each tensor, the file records:
+The tokenizer converts text to token IDs, and those IDs index directly into the
+embedding matrix. A tokenizer from a different model produces meaningless output
+even when the tensor shapes happen to match.
 
-- its name, such as `model.layers.0.self_attn.q_a_proj.weight`;
-- its data type, such as BF16, FP16, or an integer type;
-- its shape, such as `[4096, 4096]`;
-- byte offsets locating its data in the file; and
-- optionally, string metadata about the checkpoint.
+### `tokenizer.json`
 
-The numeric tensor data follows the metadata header. SafeTensors does not store
-executable Python objects, which is why it is safer to open than a pickle-based
-PyTorch checkpoint from an unknown source.
+The complete **fast tokenizer** serialized from the Rust `tokenizers` library:
+normalizer, pre-tokenizer, the full 129,280-entry vocabulary, merge rules,
+post-processor, and decoder. At 6.37 MB it is the second-largest file in the
+repository. When it is present this single file is enough, which is why there is
+no `tokenizer.model`, `vocab.json`, or `merges.txt` here.
 
-A decoder-only DeepSeek mixture-of-experts model contains tensor groups like
-these. The exact names should be checked in its shard index:
+### `tokenizer_config.json`
 
-| Example tensor name | Meaning |
+How to construct the tokenizer:
+
+| Field | Value |
 | --- | --- |
-| `model.embed_tokens.weight` | Lookup table that turns each token ID into a hidden vector |
-| `model.layers.0.self_attn.q_a_proj.weight` | First low-rank query projection in the attention block |
-| `model.layers.0.self_attn.q_a_norm.weight` | Normalization applied between the two query projections |
-| `model.layers.0.self_attn.q_b_proj.weight` | Expands the low-rank query representation into attention heads |
-| `model.layers.0.self_attn.kv_proj.weight` | Produces the shared key/value representation; V4 uses one KV head for all query heads |
-| `model.layers.0.self_attn.o_a_proj.weight` | First, grouped stage of the attention output projection |
-| `model.layers.0.self_attn.o_b_proj.weight` | Maps the grouped attention output back to the model's hidden size |
-| `model.layers.0.self_attn.compressor.kv_proj.weight` | Projects states for the compressed long-range attention branch |
-| `model.layers.3.mlp.gate.weight` | Router that scores which experts should process each token |
-| `model.layers.3.mlp.experts.gate_up_proj` | Packed 3D gate/up weights for every routed expert in that layer |
-| `model.layers.3.mlp.experts.down_proj` | Packed 3D down-projection weights for every routed expert |
-| `model.layers.3.mlp.shared_experts.gate_proj.weight` | Gate projection in the shared expert that processes every token |
-| `model.layers.0.input_layernorm.weight` | Scale parameters for normalization before attention |
-| `model.layers.0.post_attention_layernorm.weight` | Scale parameters for normalization before the feed-forward block |
-| `model.norm.weight` | Final normalization parameters |
-| `lm_head.weight` | Maps final hidden vectors to vocabulary logits for next-token prediction |
+| `tokenizer_class` | `PreTrainedTokenizerFast` |
+| `model_max_length` | `1048576` |
+| `add_bos_token` / `add_eos_token` | `false` / `false` |
+| `bos_token` | `<｜begin▁of▁sentence｜>` |
+| `eos_token` | `<｜end▁of▁sentence｜>` |
+| `pad_token` | `<｜end▁of▁sentence｜>`, reused as in most causal LMs |
+| `unk_token` | `null`; byte-level BPE has no unknown token |
 
-DeepSeek V4 also has learned compressor, indexer, attention-sink, and
-manifold-constrained hyper-connection parameters. Names can still vary between
-model revisions and runtime conversions. Bias tensors may be present, and
-`lm_head.weight` may be tied to the token embedding rather than stored as a
-separate copy. The FP8 DeepSeek-V4-Flash checkpoint also stores scale tensors
-needed to reconstruct or execute its low-precision matrix weights.
+`add_bos_token: false` is worth noting: the caller is responsible for the BOS
+token, because the prompt format is built outside the tokenizer.
 
-The weight file normally does **not** explain the complete forward pass. The
-runtime combines its model implementation with `config.json`, then matches the
-implementation's parameter names and shapes to the stored tensors. A wrong
-architecture or incompatible config produces missing-key, unexpected-key, or
-shape-mismatch errors.
+### Tokenizer files you will see elsewhere
 
-## Important Configuration Files
+- `tokenizer.model` — SentencePiece binary (Llama 2, Mistral, Gemma).
+- `vocab.json` + `merges.txt` — BPE vocabulary and merge ranks (GPT-2 style).
+- `vocab.txt` — WordPiece vocabulary (BERT style).
+- `special_tokens_map.json` — maps `bos_token`, `eos_token`, `pad_token`, and
+	`unk_token` to concrete tokens. This repo folds that information into
+	`tokenizer_config.json` instead.
 
-### `config.json`: The Blueprint
+## Prompt Formatting: The `encoding/` Folder
 
-A shortened DeepSeek-V4-Flash architecture configuration has fields like these:
-
-```json
-{
-	"architectures": ["DeepseekV4ForCausalLM"],
-	"model_type": "deepseek_v4",
-	"vocab_size": 129280,
-	"hidden_size": 4096,
-	"moe_intermediate_size": 2048,
-	"num_hidden_layers": 43,
-	"num_attention_heads": 64,
-	"num_key_value_heads": 1,
-	"head_dim": 512,
-	"q_lora_rank": 1024,
-	"n_routed_experts": 256,
-	"n_shared_experts": 1,
-	"num_experts_per_tok": 6,
-	"max_position_embeddings": 1048576,
-	"sliding_window": 128
-}
-```
-
-The runtime uses `model_type` and, when present, `architectures` to select an
-implementation, then uses the dimensions to create tensors with the expected
-shapes. The expert fields describe the mixture-of-experts layout: the checkpoint
-contains 256 routed experts per layer, but only 6 are selected for each token,
-plus one shared expert.
-`torch_dtype` describes a preferred or original dtype, but loaders may choose a
-different runtime dtype. `quantization_config` tells a compatible runtime how to
-interpret the FP8 tensors and scales; an FP8 tag alone is not sufficient
-implementation detail.
-
-### Tokenizer Files: The Vocabulary Contract
-
-The model only sees integer token IDs. The tokenizer files define the exact
-mapping between text and those IDs. Using a tokenizer from a merely similar
-model can silently produce poor output because the same ID may represent a
-different byte sequence or token.
-
-Common alternatives are:
-
-| Files | Tokenizer family |
-| --- | --- |
-| `tokenizer.json` | Single-file fast tokenizer used by the Hugging Face Tokenizers library |
-| `tokenizer.model` | SentencePiece model, common in Llama-derived and multilingual models |
-| `vocab.json` plus `merges.txt` | Byte-pair encoding layout used by GPT-2-like tokenizers |
-| `vocab.txt` | WordPiece vocabulary used by BERT-like tokenizers |
-| `added_tokens.json` | Tokens added after the original tokenizer was trained |
-
-A chat model also needs the correct chat template, often stored in
-`tokenizer_config.json` or a dedicated template file. The template inserts the
-roles, separators, and control tokens expected during instruction tuning.
-
-## How a Loader Uses the Package
-
-Transformers can resolve the package automatically:
+Most instruct models ship a `chat_template.jinja`, or a `chat_template` string
+inside `tokenizer_config.json`, that turns a message list into the exact prompt
+the model was tuned on. **This release ships neither.** The model card says so
+directly and provides `encoding/encoding_dsv4.py` instead:
 
 ```python
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from encoding_dsv4 import encode_messages, parse_message_from_completion_text
 
-model_id = "deepseek-ai/DeepSeek-V4-Flash"
+messages = [
+    {"role": "system", "content": "You are a helpful assistant."},
+    {"role": "user", "content": "What is 2+2?"},
+]
+prompt = encode_messages(messages, thinking_mode="thinking")
+# "<｜begin▁of▁sentence｜>You are a helpful assistant.<｜User｜>What is 2+2?<｜Assistant｜><think>"
 
-tokenizer = AutoTokenizer.from_pretrained(model_id)
-model = AutoModelForCausalLM.from_pretrained(
-	model_id,
-	 device_map="auto",
-)
-
-inputs = tokenizer("Weight files contain", return_tensors="pt").to(model.device)
-output_ids = model.generate(**inputs, max_new_tokens=30)
-print(tokenizer.decode(output_ids[0], skip_special_tokens=True))
+tokens = tokenizer.encode(prompt)
 ```
 
-This is the standard package-loading pattern, not a promise that the checkpoint
-fits on one workstation. DeepSeek-V4-Flash requires a runtime and aggregate
-accelerator memory that support its architecture and FP8 representation; follow
-the model card's serving instructions for real deployment.
+The reason is that a Jinja template cannot express what this model needs: two
+thinking modes, dropping earlier turns' reasoning, three `reasoning_effort`
+levels injected as a prompt prefix, a DSML tool-calling block, and auxiliary
+task tokens such as `<｜title｜>` and `<｜query｜>`. The folder also provides
+`parse_message_from_completion_text`, the inverse function that splits raw
+output back into `reasoning_content`, `content`, and `tool_calls`.
 
-At a high level, the loader:
+Whichever form it takes, this is the file people most often skip — and skipping
+it is the most common reason an instruct model gives weak or rambling answers.
+The model is being asked in a format it never saw during fine-tuning.
 
-1. reads `config.json` and constructs the architecture;
-2. reads the shard index, if present;
-3. loads each named tensor into its matching model parameter;
-4. constructs the tokenizer from its own files; and
-5. applies generation defaults when `generate()` is called.
+## The `inference/` Folder
 
-To inspect tensor names directly without constructing the model:
+Reference code, not part of the model:
 
-```python
-from pathlib import Path
+- `convert.py` — converts the Hugging Face shards into the layout this demo
+	expects, given an expert count and a model-parallel degree.
+- `generate.py` — an interactive and batch chat driver launched with `torchrun`.
+- `kernel.py` — the custom quantized kernels.
+- `config.json` — a *separate* config for this demo, not the Transformers one at
+	the repository root.
 
-from safetensors import safe_open
+Publishers include folders like this when a model needs kernels or a launch path
+that upstream frameworks do not yet have. You can ignore it entirely when
+serving with vLLM or SGLang.
 
-model_directory = Path("DeepSeek-V4-Flash")
-first_shard = next(model_directory.glob("model-*.safetensors"))
+## Files You See in Other Model Types
 
-with safe_open(
-	first_shard,
-	 framework="pt",
-	 device="cpu",
-) as checkpoint:
-	 print(checkpoint.metadata())
-	 print(list(checkpoint.keys())[:10])
-	 embedding = checkpoint.get_tensor("model.embed_tokens.weight")
-	 print(embedding.shape, embedding.dtype)
-```
+### Multimodal models
 
-`get_tensor()` materializes that tensor in memory, so avoid retrieving very
-large tensors merely to list the keys.
+- `preprocessor_config.json` — image resize, crop, rescale, and normalization
+	values, or audio sampling parameters.
+- `processor_config.json` — how the tokenizer and the feature extractor are
+	combined.
 
-## Other Common Model Packages
+### LoRA and other adapters
 
-### One Unsharded SafeTensors File
+- `adapter_model.safetensors` — only the low-rank delta weights, typically
+	megabytes rather than gigabytes.
+- `adapter_config.json` — `base_model_name_or_path`, rank `r`, `lora_alpha`, and
+	the target module names.
 
-Small models may use this layout:
+An adapter is useless on its own; it must be applied to the exact base model it
+names.
 
-```text
-SmallLM/
-|-- config.json
-|-- model.safetensors
-|-- tokenizer.json
-`-- tokenizer_config.json
-```
+### Other quantized checkpoints
 
-There is no index because one file contains every weight tensor.
+GPTQ and AWQ builds use a separate `quantize_config.json` with `bits`,
+`group_size`, `sym`, and `desc_act`, rather than the `quantization_config` block
+inside `config.json` used here. Mismatched quantization metadata produces
+garbage output rather than a clean error, so keep it with its weights.
 
-### GGUF for Local Inference
+### Custom-code models
 
-```text
-DeepSeek-V4-Flash-GGUF/
-|-- README.md
-|-- DeepSeek-V4-Flash-Q4_K_M-00001-of-000NN.gguf
-|-- ...
-`-- DeepSeek-V4-Flash-Q4_K_M-000NN-of-000NN.gguf
-```
+`modeling_*.py` and `configuration_*.py` carry the architecture implementation
+for repositories whose architecture is not yet merged into Transformers. Loading
+them requires `trust_remote_code=True`, which executes the publisher's Python.
+This repo has no such files at the root, because `deepseek_v4` is supported by
+Transformers 4.57.1 directly.
 
-A GGUF file commonly bundles quantized weights, tensor metadata, architecture
-metadata, and tokenizer metadata into one memory-mappable file. It is intended
-for GGML-compatible runtimes such as llama.cpp rather than being a drop-in
-replacement for SafeTensors in Transformers.
+### Training and fine-tuning leftovers
 
-The layout above represents a possible community conversion, not the official
-SafeTensors repository. Very large GGUF models are commonly split into multiple
-files, and the actual quantization and shard count depend on the publisher.
+`optimizer.pt`, `scheduler.pt`, `trainer_state.json`, `training_args.bin`, and
+`rng_state.pth` belong to a training checkpoint. They let training resume, and
+`optimizer.pt` alone can be twice the size of the weights. Delete them for
+inference-only deployments.
 
-The suffix `Q4_K_M` identifies a particular 4-bit-family GGUF quantization, not
-the model architecture. Multimodal GGUF distributions may include a separate
-vision projector file, often named with `mmproj`.
+## What You Actually Need
 
-### LoRA or PEFT Adapter
-
-```text
-DeepSeek-V4-Flash-Domain-LoRA/
-|-- README.md
-|-- adapter_config.json
-`-- adapter_model.safetensors
-```
-
-`adapter_model.safetensors` stores only the learned low-rank changes, usually a
-small fraction of the full model. `adapter_config.json` identifies settings such
-as rank, scaling, targeted modules, and the expected base model. The adapter
-cannot normally run alone; a PEFT-compatible loader applies it to the matching
-base model. It can also be merged into a copy of the base weights for deployment.
-
-### Legacy PyTorch Checkpoint
-
-Older repositories may contain `pytorch_model.bin`, or sharded `.bin` files plus
-`pytorch_model.bin.index.json`. They serve the same basic role as SafeTensors
-weights, but are commonly serialized with Python pickle. Load them only from a
-trusted source because pickle data can execute code during deserialization.
-
-Files named `.pt`, `.pth`, or `.ckpt` are generic checkpoint names. Their
-contents are application-defined: one might contain only a model state
-dictionary, while another also contains optimizer state and arbitrary Python
-objects.
-
-### Training-Resume Checkpoint
-
-```text
-checkpoint-12000/
-|-- config.json
-|-- model.safetensors
-|-- optimizer.pt
-|-- scheduler.pt
-|-- trainer_state.json
-|-- rng_state.pth
-`-- tokenizer.json
-```
-
-The model weights are enough to start ordinary inference or a new fine-tuning
-run. The other files preserve training progress:
-
-| File | Purpose |
+| Goal | Keep |
 | --- | --- |
-| `optimizer.pt` | Optimizer moments and other state needed to continue with the same optimization trajectory |
-| `scheduler.pt` | Learning-rate scheduler position and state |
-| `trainer_state.json` | Step count, metrics, best-checkpoint information, and trainer bookkeeping |
-| `rng_state.pth` | Random-number generator states used to make a resumed run more reproducible |
-| `scaler.pt` | Optional gradient-scaler state for FP16 mixed-precision training |
+| Transformers inference | `config.json`, all shards, the index, and the tokenizer files |
+| vLLM / SGLang serving | The same set, plus `generation_config.json`; quantization settings travel inside `config.json` |
+| Correct chat behaviour | The chat template — or, here, the `encoding/` folder |
+| `llama.cpp` / Ollama / LM Studio | The `*.gguf` file only |
+| Fine-tuning a base model | Everything above, plus the license and model card |
+| Resuming a training run | The full checkpoint, including optimizer and scheduler state |
 
-These files can be much larger than expected: Adam-style optimizer state may
-consume more storage than the model weights. They are not needed for serving.
-
-### Multimodal and Exported Models
-
-Image, audio, or video models may add `preprocessor_config.json`,
-`processor_config.json`, feature-extractor files, or separate projector weights.
-These define resizing, normalization, sampling rates, and how multiple input
-modalities are assembled.
-
-Deployment exports use different artifacts, for example `model.onnx` plus
-external tensor-data files, or a TensorRT `.engine`/`.plan`. Such files combine
-or compile graph structure and weights for a target runtime. They are derived
-deployment artifacts, not interchangeable source checkpoints.
-
-## Practical Checklist
-
-Before downloading or loading a model, check:
-
-1. **Is it a full model or only an adapter?** Look for full weight shards versus
-	`adapter_model.safetensors`.
-2. **Does the runtime support the format and quantization?** SafeTensors, GGUF,
-	GPTQ, and AWQ require different loaders or kernels.
-3. **Are all shards present?** Every file named by the index is required.
-4. **Is the tokenizer included and matched to the model?** Similar vocabulary
-	sizes do not guarantee compatible token IDs.
-5. **How much memory is required?** File size approximates weight storage, not
-	total runtime memory; the KV cache and temporary buffers need additional RAM
-	or VRAM.
-6. **Does it require custom code?** Repositories with custom modeling Python may
-	ask for `trust_remote_code=True`, which executes repository code and should be
-	reviewed first.
-7. **What does the license permit?** Open weights do not necessarily mean
-	unrestricted commercial use or redistribution.
+A practical rule: **weights alone are not a model**. The 167 GB of tensors here
+are inert without the few megabytes of configuration, vocabulary, and
+prompt-encoding files sitting next to them. Keep them together, or the download
+cannot be reconstructed into a working model later.
 
 ## References
 
-- [DeepSeek-V4-Flash model repository](https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash)
-- [DeepSeek V4 implementation in Transformers](https://github.com/huggingface/transformers/tree/main/src/transformers/models/deepseek_v4)
-- [Transformers model loading, configuration, and sharded checkpoints](https://huggingface.co/docs/transformers/main/en/models)
-- [Transformers chat templates](https://huggingface.co/docs/transformers/main/en/chat_templating)
-- [SafeTensors format](https://github.com/huggingface/safetensors)
-- [PEFT checkpoint format](https://huggingface.co/docs/peft/developer_guides/checkpoint)
+- [DeepSeek-V4-Flash-0731 model card](https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-0731)
+- [Hugging Face model repository files](https://huggingface.co/docs/hub/en/models-uploading)
+- [Transformers configuration reference](https://huggingface.co/docs/transformers/en/main_classes/configuration)
+- [Transformers chat templates](https://huggingface.co/docs/transformers/en/chat_templating)
+- [Tokenizers library](https://huggingface.co/docs/tokenizers/en/index)
+- [PEFT adapter format](https://huggingface.co/docs/peft/en/index)
 - [GGUF specification](https://github.com/ggml-org/ggml/blob/master/docs/gguf.md)

@@ -1,3 +1,12 @@
+---
+title: LLM Weight Formats and Data Types
+description: SafeTensors vs. GGUF, BF16 vs. FP16, and how to size a checkpoint.
+lang: en
+ref: weights-and-types
+nav_order: 1
+math: true
+---
+
 # LLM Weight Formats and Data Types
 
 An LLM distribution has three independent properties:
@@ -51,7 +60,7 @@ For $P$ billion parameters stored at $b$ bits per parameter, the raw weight size
 in decimal gigabytes is:
 
 $$
-	ext{size (GB)} \approx P \times \frac{b}{8}
+\text{size (GB)} \approx P \times \frac{b}{8}
 $$
 
 | Stored representation | Bits / parameter | 8B model | 70B model | Main role |

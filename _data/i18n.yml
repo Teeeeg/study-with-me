@@ -1,0 +1,33 @@
+en:
+  title: Study With Me
+  tagline: Learning notes on AI, systems, and everything in between.
+  contents: Contents
+  home: Home
+  backlog: Backlog
+  switch: 中文
+  switch_title: 切换到中文
+  sections: Sections
+  backlog_intro: Topics queued up for future notes. Anything marked as published has a page already.
+  status:
+    todo: Planned
+    doing: Writing
+    done: Published
+  skip: Skip to content
+  edit: Edit this page on GitHub
+
+zh:
+  title: 一起学
+  tagline: 关于 AI、系统，以及路上遇到的一切的学习笔记。
+  contents: 目录
+  home: 首页
+  backlog: 待学清单
+  switch: English
+  switch_title: Switch to English
+  sections: 章节
+  backlog_intro: 排队等待整理成笔记的主题。标记为「已发布」的说明已经有对应页面了。
+  status:
+    todo: 计划中
+    doing: 写作中
+    done: 已发布
+  skip: 跳到正文
+  edit: 在 GitHub 上编辑本页

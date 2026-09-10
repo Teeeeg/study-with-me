@@ -1,0 +1,19 @@
+---
+layout: base.njk
+---
+{% import "clusters.njk" as ui %}
+{% set t = i18n[lang] %}
+{% set homeGroups = collections.docs | clusterGroups(lang, clusters) %}
+
+<div class="hero">
+  <h1>{{ t.title }}</h1>
+  <p class="hero-tagline">{{ t.tagline }}</p>
+</div>
+
+<div class="prose intro">
+  {{ content | safe }}
+</div>
+
+<div class="clusters">
+  {{ ui.cards(homeGroups) }}
+</div>
