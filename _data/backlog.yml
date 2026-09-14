@@ -13,7 +13,7 @@
 
 - dir: /ai/fundamentals/
   items:
-    - status: doing
+    - status: done
       ref: attention
       en: Attention Mechanism
       zh: 注意力机制
