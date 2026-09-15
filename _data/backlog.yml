@@ -28,7 +28,8 @@
       en: Inside a downloaded model folder
       zh: 模型文件夹里都有什么
 
-    - status: todo
+    - status: done
+      ref: moe
       en: Mixture of experts — routing, shared experts, and active parameters
       zh: 混合专家 —— 路由、共享专家与激活参数
     
