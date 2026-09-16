@@ -9,9 +9,122 @@ math: true
 
 # GPU 性能、通信与调度
 
-GPU 集群不能只看“有多少张卡”。单卡是否真正发挥算力、多卡之间走哪条通信路径、
+GPU 集群不能只看”有多少张卡”。单卡是否真正发挥算力、多卡之间走哪条通信路径、
 调度器分配的 GPU 是否处在合适的拓扑中，都会直接影响训练吞吐。分析时可以按三层逐步
 定位：**计算是否饱和 → 通信是否受限 → 调度是否破坏了理想拓扑**。
+
+## NVIDIA GPU 架构演进
+
+![NVIDIA GPU architecture evolution from 2006 to 2024](../../.asset/gpu/gpu-architecture-evolution.svg)
+
+### 早期架构（2006-2014）
+
+**Tesla 架构（2006）**：NVIDIA 首次推出 Tesla 架构，标志着所有 GPU 开始搭载 CUDA Core，
+为通用计算开启了新纪元。CUDA（Compute Unified Device Architecture）首次发布于 2006 年，
+使得 GPU 可以用于通用并行计算而非仅限于图形渲染。
+
+- **代表产品**：GeForce 8800 GTX（消费级）、Tesla C870（计算卡）
+
+**Fermi 架构（2010）**：在此之前，GPU 的处理核心被称为 Stream Processor (SP)。Fermi 
+架构对处理核心进行了重大改进，引入了更好的线程调度和管理机制、更高效的内存访问模式、
+ECC 内存支持以及统一的 L2 缓存，并将处理核心正式命名为 CUDA Core，强调与 CUDA 编程
+模型的紧密集成。Fermi 架构的 GF100 芯片包含 16 个 SM（Streaming Multiprocessor），
+每个 SM 包含 32 个 CUDA Core，每个 CUDA Core 由 1 个浮点运算单元（FPU）和 1 个整数
+运算单元（ALU）组成。
+
+- **代表产品**：GeForce GTX 480（消费级）、Tesla C2050/C2070（计算卡）
+
+**Kepler 架构（2012）** 和 **Maxwell 架构（2014）**：这两代架构延续了 Fermi 的设计理念，
+主要通过优化 SM 结构和大幅增加 CUDA Core 数量来提升算力。Kepler 引入了动态并行和 
+Hyper-Q 技术，Maxwell 则专注于能效比的提升。由于 CUDA Core 在 GPU 中并行运算，从
+逻辑上说，CUDA Core 越多，算力也就相应越强。
+
+- **Kepler 代表产品**：GeForce GTX 680/TITAN（消费级）、Tesla K20/K40/K80（计算卡）
+- **Maxwell 代表产品**：GeForce GTX 980/TITAN X（消费级）、Tesla M40/M60（计算卡）
+
+### 深度学习时代（2016-至今）
+
+**Pascal 架构（2016）**：NVIDIA GPU 开始向深度学习方向演进的转折点。Pascal 引入了 
+NVLink 1.0 高速互连技术，提供 160 GB/s 的双向带宽，为多 GPU 通信奠定了基础。Pascal 
+还引入了 HBM2（High Bandwidth Memory）高带宽显存，并优化了 FP16 半精度运算性能。
+代表产品 P100 是首款专为深度学习设计的数据中心 GPU。
+
+- **代表产品**：GeForce GTX 1080/TITAN X（消费级）、Tesla P100（数据中心）、Quadro P6000（专业卡）
+
+**Volta 架构（2017）**：标志着深度学习优化的重大突破。Volta 首次引入 **Tensor Core**，
+这是专为 AI 训练和推理设计的可编程矩阵乘法和累加单元。V100 GPU 包含 640 个 Tensor Core，
+每个 SM 配备 8 个 Tensor Core。每个 Tensor Core 每时钟周期可执行 4×4×4 的矩阵乘法运算，
+即 64 个浮点乘法累加（FMA）操作。Tensor Core 通过融合乘法加法（FMA）方式，接受两个 
+4×4 的 FP16 输入矩阵，执行矩阵乘法后与第三个矩阵（FP16 或 FP32）相加，输出可以是 FP16 
+或 FP32 精度。这实现了底层硬件上的混合精度计算——输入为 FP16 减少计算资源和内存带宽，
+累加和输出使用 FP32 保证精度和数值稳定性。V100 相比 Pascal P100，每个 SM 的深度学习
+吞吐量提高 8 倍，整体性能提升 12 倍。Volta 还将 NVLink 升级到 2.0，带宽提升至 300 GB/s。
+
+- **代表产品**：Tesla V100（数据中心，16GB/32GB HBM2）、Quadro GV100（专业卡）、TITAN V（高端消费级）
+
+**Turing 架构（2018）**：在 Tensor Core 基础上，Turing 首次引入 **RT Core**（光线追踪核心），
+将 GPU 的应用拓展到实时光线追踪和混合渲染领域。Turing 的 Tensor Core 支持 INT8 和 INT4 
+精度，针对推理场景进行了优化，并引入了多精度支持以提升推理性能和效率。
+
+- **代表产品**：GeForce RTX 2080/2080 Ti（消费级）、Tesla T4（推理专用）、Quadro RTX 6000/8000（专业卡）
+
+**Ampere 架构（2020）**：代表产品 A100。Ampere 搭载第三代 Tensor Core，支持更多数据类型
+（包括 TF32、BF16、FP64、INT8 等），并引入了结构化稀疏性（Structured Sparsity）加速技术，
+可在特定稀疏模式下实现 2 倍性能提升。A100 支持 **Multi-Instance GPU（MIG）**功能，可将
+单个 GPU 划分为最多 7 个独立实例，每个实例拥有独立的 SM、显存、memory controller 和
+L2 缓存，实现硬件级隔离。A100 的 NVLink 升级到 3.0，带宽达到 600 GB/s。这使得 A100 
+既可以支撑大规模训练，也能高效服务多租户推理场景。
+
+- **代表产品**：GeForce RTX 3090（消费级）、A100（数据中心，40GB/80GB HBM2e，PCIe/SXM）、A10/A30/A40（不同场景专用）
+
+**Hopper 架构（2022）**：代表产品 H100。Hopper 搭载第四代 Tensor Core，引入了 
+**Transformer Engine**，通过动态 FP8 和 FP16 混合精度针对 Transformer 模型进行专门优化，
+可实现高达 9 倍的训练加速和 30 倍的推理加速（相比 A100）。H100 的 NVLink 升级到第四代，
+单 GPU 带宽提升到 900 GB/s，并支持 **NVLink Switch System**，可通过 NVLink Switch 构建
+最多 256 个 GPU 的无阻塞、全互连网络，为大规模集群提供高带宽、低延迟的通信基础设施。
+H100 的 Tensor Core 支持 FP8（8 位浮点）精度，在保持模型精度的同时进一步提升性能。
+
+- **代表产品**：H100（数据中心，80GB HBM3，PCIe/SXM）、H200（数据中心，141GB HBM3e）、L40S（推理/图形混合）
+
+**Blackwell 架构（2024）**：代表产品 B100/B200/GB200。Blackwell 是 NVIDIA 最新一代架构，
+搭载第五代 Tensor Core。Blackwell GPU 包含 2080 亿个晶体管，采用定制的 TSMC 4NP 工艺制造。
+B200 采用双芯片设计，通过 10TB/s 的芯片间互连将两个 reticle-limited 芯片连接为单一逻辑 GPU。
+Blackwell 支持 FP4（4 位浮点）精度，针对大语言模型（LLM）和生成式 AI 进行优化。NVLink 
+升级到第五代（NVLink 5.0），单 GPU 提供 1.8TB/s 的双向互连带宽。Blackwell 专注于大规模 
+AI 模型训练和推理的性能提升，特别是在万亿参数级别模型的训练效率。
+
+![Grace Blackwell architecture from superchip to rack-scale system](../../.asset/gpu/grace-blackwell-architecture.svg)
+
+**GB200 Grace Blackwell Superchip**：这是 Blackwell 架构的关键创新，将 CPU 与 GPU 深度融合。
+GB200 超级芯片通过 NVLink-C2C 互连技术，将 1 个 NVIDIA Grace CPU 和 2 个 Blackwell GPU 
+紧密连接。Grace CPU 基于 ARM Neoverse V2 架构，提供 72 个核心，针对 AI 和 HPC 工作负载优化。
+NVLink-C2C 提供 900GB/s 的 CPU-GPU 带宽，实现统一内存访问，消除了传统 PCIe 瓶颈。
+
+**GB200 NVL72 系统**：这是一个机架级的超大规模 AI 系统，代表了 Blackwell 架构的终极形态。
+单个机架包含：
+- 36 个 Grace CPU 和 72 个 Blackwell GPU（即 36 个 GB200 超级芯片）
+- 通过 NVLink Switch System 互连，形成 72-GPU NVLink 域，作为单一巨型 GPU 运作
+- 提供 130TB/s 的低延迟 GPU 间通信带宽
+- 统一的 13.5TB HBM3e 显存
+- 130 PetaFLOPS FP4 算力
+- 液冷设计，单机架功耗约 120kW
+- 相比 H100 系统，实时万亿参数 LLM 推理性能提升 30 倍
+
+GB200 NVL72 实现了真正的"机架级 GPU"概念，72 个 GPU 通过 NVLink 5.0 全互连，任意两个 GPU 
+之间都是等距离、高带宽连接，消除了传统多节点系统中的网络瓶颈。9 块专用 NVLink Switch 板卡
+构成交换网络，实现无阻塞的 GPU 间通信。
+
+- **代表产品**：
+  - B100（数据中心单卡）
+  - B200（数据中心单卡，192GB HBM3e）
+  - GB200（Grace-Blackwell 超级芯片，CPU+2×GPU）
+  - GB200 NVL72（机架级系统，36×CPU + 72×GPU）
+  - DGX GB200（完整的液冷机架解决方案）
+
+**参考资料**：
+- [NVIDIA DGX GB200](https://www.nvidia.com/en-us/data-center/dgx-gb200/)
+- [GB200 NVL72 System](https://www.nvidia.com/en-us/data-center/gb200-nvl72/)
+- [GB200 Multi-Node Tuning Guide](https://docs.nvidia.com/multi-node-nvlink-systems/multi-node-tuning-guide/overview.html)
 
 ## GPU 的性能指标
 
@@ -23,7 +136,7 @@ GPU 集群不能只看“有多少张卡”。单卡是否真正发挥算力、�
 
 判断运行性能时，需要组合观察不同层级的指标：
 
-![GPU performance signals from activity to workload outcomes](../../.asset/gpu/gpu-performance-signals.drawio.svg)
+![GPU performance signals from activity to workload outcomes](../../.asset/gpu/gpu-performance-signals.svg)
 
 | 指标 | 回答的问题 | 主要局限 |
 | --- | --- | --- |
@@ -97,7 +210,7 @@ Bridge 或 CPU socket 间链路。
 
 常见路径从优到劣大致为：
 
-![Direct NVLink communication compared with host-staged PCIe fallback](../../.asset/gpu/gpu-interconnect-paths.drawio.svg)
+![Direct NVLink communication compared with host-staged PCIe fallback](../../.asset/gpu/gpu-interconnect-paths.svg)
 
 ```text
 同域 NVLink/NVSwitch
@@ -155,7 +268,7 @@ Kubernetes 默认把 `nvidia.com/gpu` 当作不可分割的标量扩展资源。
 
 拓扑感知调度可分为三层：
 
-![Topology-aware scheduling from workload intent to GPU placement](../../.asset/gpu/gpu-topology-scheduling.drawio.svg)
+![Topology-aware scheduling from workload intent to GPU placement](../../.asset/gpu/gpu-topology-scheduling.svg)
 
 | 层级 | 调度器需要保证什么 | 适用场景 | 常见策略 |
 | --- | --- | --- | --- |
@@ -203,7 +316,7 @@ Kubernetes 默认把 GPU 作为整卡资源分配。这在训练场景中能保�
 
 GPU 共享可以在**硬件、驱动、运行时和调度器**四个层级实现，能力和代价各不相同：
 
-![GPU sharing methods from time-slicing to hardware partitioning](../../.asset/gpu/gpu-sharing-methods.drawio.svg)
+![GPU sharing methods from time-slicing to hardware partitioning](../../.asset/gpu/gpu-sharing-methods.svg)
 
 #### 1. 时间片轮转（Time-Slicing）
 
@@ -223,7 +336,7 @@ MPS 是 NVIDIA 提供的运行时层共享方案。它启动一个 MPS server，
 MPS client 连接到同一 CUDA context。MPS 会把来自不同进程的 kernel 在 SM 和显存
 上进行空间复用，而不是简单的时间片切换。
 
-![MPS architecture showing space multiplexing vs context switching](../../.asset/gpu/mps-architecture.drawio.svg)
+![MPS architecture showing space multiplexing vs context switching](../../.asset/gpu/mps-architecture.svg)
 
 ##### MPS 的工作原理
 
@@ -342,7 +455,7 @@ MIG 是 A100/H100 等 Ampere 及后续架构提供的硬件级分区能力。它
 多个 GPU Instance（GI），每个 GI 拥有独立的 SM、显存、memory controller 和
 cache，彼此完全隔离。
 
-![MIG hardware partitioning with complete isolation](../../.asset/gpu/mig-architecture.drawio.svg)
+![MIG hardware partitioning with complete isolation](../../.asset/gpu/mig-architecture.svg)
 
 - **优点**：硬件级隔离，故障和 OOM 不会跨实例影响；每个实例的显存和算力有明确上限；
   支持错误隔离和 QoS 保障。
@@ -367,7 +480,7 @@ vGPU 是 NVIDIA vGPU 软件提供的虚拟化方案，主要用于虚拟机场�
 
 除了上述底层技术，还需要调度器层面的支持，才能让多个 Pod 合理共享 GPU 并避免超用。
 
-![GPU sharing architecture from workload to hardware](../../.asset/gpu/gpu-sharing-architecture.drawio.svg)
+![GPU sharing architecture from workload to hardware](../../.asset/gpu/gpu-sharing-architecture.svg)
 
 
 ## 参考资料
