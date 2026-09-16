@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="680" viewBox="0 0 1200 680" role="img"
+    aria-labelledby="title desc">
+    <title id="title">Compressed Sparse Attention token compression</title>
+    <desc id="desc">CSA replaces groups of historical tokens with learned summaries. c4a uses
+        overlapping windows of eight tokens with stride four, while c128a uses non-overlapping
+        groups of 128 tokens.</desc>
+    <defs>
+        <marker id="arrow-blue" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+            <path d="M0,0 L8,4 L0,8 Z" fill="#0071E3" />
+        </marker>
+        <marker id="arrow-green" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+            <path d="M0,0 L8,4 L0,8 Z" fill="#34C759" />
+        </marker>
+    </defs>
+  <rect width="100%" height="100%" fill="#F5F5F7"/>
+    <rect width="1200" height="680" fill="#F5F5F7" />
+    <g font-family="Avenir Next, Segoe UI, sans-serif">
+        <text x="50" y="58" font-size="30" font-weight="700" fill="#1D1D1F">Compressed Sparse
+            Attention (CSA)</text>
+        <text x="50" y="88" font-size="16" fill="#6E6E73">Compress the token axis: many historical
+            tokens become a few learned summaries.</text>
+
+        <text x="50" y="137" font-size="13" font-weight="700" fill="#6E6E73">ORIGINAL HISTORY</text>
+        <g fill="#FFFFFF" stroke="#C7C7CC" text-anchor="middle">
+            <rect x="50" y="158" width="54" height="44" rx="6" />
+            <rect x="112" y="158" width="54" height="44" rx="6" />
+            <rect x="174" y="158" width="54" height="44" rx="6" />
+            <rect x="236" y="158" width="54" height="44" rx="6" />
+            <rect x="298" y="158" width="54" height="44" rx="6" />
+            <rect x="360" y="158" width="54" height="44" rx="6" />
+            <rect x="422" y="158" width="54" height="44" rx="6" />
+            <rect x="484" y="158" width="54" height="44" rx="6" />
+            <rect x="546" y="158" width="54" height="44" rx="6" />
+            <rect x="608" y="158" width="54" height="44" rx="6" />
+            <rect x="670" y="158" width="54" height="44" rx="6" />
+            <rect x="732" y="158" width="54" height="44" rx="6" />
+            <rect x="794" y="158" width="54" height="44" rx="6" />
+            <rect x="856" y="158" width="54" height="44" rx="6" />
+            <rect x="918" y="158" width="54" height="44" rx="6" />
+            <rect x="980" y="158" width="54" height="44" rx="6" />
+        </g>
+        <g font-size="12" fill="#6E6E73" text-anchor="middle">
+            <text x="77" y="185">t0</text>
+            <text x="139" y="185">t1</text>
+            <text x="201" y="185">t2</text>
+            <text x="263" y="185">t3</text>
+            <text x="325" y="185">t4</text>
+            <text x="387" y="185">t5</text>
+            <text x="449" y="185">t6</text>
+            <text x="511" y="185">t7</text>
+            <text x="573" y="185">t8</text>
+            <text x="635" y="185">t9</text>
+            <text x="697" y="185">t10</text>
+            <text x="759" y="185">t11</text>
+            <text x="821" y="185">t12</text>
+            <text x="883" y="185">t13</text>
+            <text x="945" y="185">t14</text>
+            <text x="1007" y="185">t15</text>
+        </g>
+
+        <rect x="48" y="148" width="492" height="64" rx="8" fill="#0071E3" fill-opacity="0.08"
+            stroke="#0071E3" stroke-width="2" />
+        <rect x="296" y="148" width="492" height="64" rx="8" fill="#34C759" fill-opacity="0.08"
+            stroke="#34C759" stroke-width="2" />
+        <text x="294" y="230" text-anchor="middle" font-size="13" font-weight="700" fill="#0058B0">Window
+            1 · 8 tokens</text>
+        <text x="542" y="248" text-anchor="middle" font-size="13" font-weight="700" fill="#167333">Window
+            2 starts 4 tokens later</text>
+
+        <rect x="50" y="286" width="1100" height="142" rx="8" fill="#FFFFFF" stroke="#C7C7CC" />
+        <text x="76" y="319" font-size="18" font-weight="700" fill="#1D1D1F">c4a · 8-token window,
+            stride 4</text>
+        <path d="M294 248 V330 H280 V347" fill="none" stroke="#0071E3" stroke-width="2"
+            marker-end="url(#arrow-blue)" />
+        <path d="M542 256 V330 H500 V347" fill="none" stroke="#34C759" stroke-width="2"
+            marker-end="url(#arrow-green)" />
+        <rect x="220" y="350" width="120" height="52" rx="8" fill="#EAF3FC" stroke="#0071E3" />
+        <text x="280" y="372" text-anchor="middle" font-size="15" font-weight="700" fill="#0058B0">Summary
+            c0</text>
+        <text x="280" y="392" text-anchor="middle" font-size="12" fill="#6E6E73">t0–t7</text>
+        <rect x="440" y="350" width="120" height="52" rx="8" fill="#EAF8EE" stroke="#34C759" />
+        <text x="500" y="372" text-anchor="middle" font-size="15" font-weight="700" fill="#167333">Summary
+            c1</text>
+        <text x="500" y="392" text-anchor="middle" font-size="12" fill="#6E6E73">t4–t11</text>
+        <text x="650" y="362" font-size="16" font-weight="700" fill="#1D1D1F">One summary every 4
+            tokens</text>
+        <text x="650" y="389" font-size="14" fill="#6E6E73">“4” means effective 4:1 compression —
+            not window size</text>
+
+        <rect x="50" y="454" width="1100" height="142" rx="8" fill="#FFFFFF" stroke="#C7C7CC" />
+        <text x="76" y="487" font-size="18" font-weight="700" fill="#1D1D1F">c128a · non-overlapping
+            windows</text>
+        <rect x="78" y="512" width="350" height="54" rx="8" fill="#F5F5F7" stroke="#6E6E73" />
+        <text x="253" y="534" text-anchor="middle" font-size="14" font-weight="700" fill="#1D1D1F">t0
+            … t127</text>
+        <text x="253" y="554" text-anchor="middle" font-size="12" fill="#6E6E73">128 historical
+            tokens</text>
+        <path d="M428 539 H484" fill="none" stroke="#0071E3" stroke-width="2"
+            marker-end="url(#arrow-blue)" />
+        <rect x="500" y="512" width="140" height="54" rx="8" fill="#EAF3FC" stroke="#0071E3" />
+        <text x="570" y="544" text-anchor="middle" font-size="15" font-weight="700" fill="#0058B0">Summary
+            c0</text>
+        <text x="700" y="531" font-size="16" font-weight="700" fill="#1D1D1F">128 tokens → 1 summary</text>
+        <text x="700" y="556" font-size="14" fill="#6E6E73">Maximum reach · effective 128:1
+            compression</text>
+
+        <rect x="50" y="620" width="1100" height="38" rx="8" fill="#FFF4E5" stroke="#FF9F0A" />
+        <text x="600" y="644" text-anchor="middle" font-size="14" font-weight="700" fill="#8A4B00">A
+            query attends to learned summaries directly — original token K/V are not reconstructed.</text>
+    </g>
+</svg>

@@ -16,3 +16,27 @@
   summary:
     en: How models are stored, packaged, loaded, and run.
     zh: 模型如何存储、打包、加载与运行。
+
+- dir: /ai/hardware/
+  title:
+    en: Hardware
+    zh: 硬件
+  summary:
+    en: GPU architecture, computation, communication, and scheduling.
+    zh: GPU 架构、计算、通信与调度。
+
+- dir: /ai/inference/
+  title:
+    en: Inference
+    zh: 推理
+  summary:
+    en: Runtime techniques for faster, more memory-efficient model serving.
+    zh: 提升模型服务速度与显存效率的推理技术。
+
+- dir: /ai/platform/
+  title:
+    en: Platform
+    zh: 平台
+  summary:
+    en: Infrastructure and orchestration for AI workloads.
+    zh: AI 工作负载的基础设施与编排。

@@ -1,0 +1,203 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 640" width="860" height="640">
+    <defs>
+        
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+            orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#6E6E73" />
+        </marker>
+        <style>
+      text { font-family: Avenir Next, Segoe UI, sans-serif; }
+      .mono { font-family: Avenir Next, Segoe UI, sans-serif; }
+      .step { font-size: 12px; font-weight: 700; fill: #6E6E73; letter-spacing: 1px; }
+      .cap { font-size: 11px; fill: #6E6E73; }
+      .flow { fill: none; stroke: #6E6E73; stroke-width: 1.4; marker-end: url(#arrow); }
+    </style>
+    </defs>
+  <rect width="100%" height="100%" fill="#F5F5F7"/>
+
+    <rect x="16" y="12" width="828" height="616" rx="8" fill="#FFFFFF" stroke="#D2D2D7"
+        stroke-width="1.5" />
+
+    <text x="430" y="46" text-anchor="middle" dominant-baseline="central" font-size="22"
+        font-weight="700" fill="#1D1D1F">自注意力内部：Q 负责提问，K / V 负责应答</text>
+    <text x="430" y="72" text-anchor="middle" dominant-baseline="central" font-size="12"
+        fill="#6E6E73">以序列 “The quick brown fox” 的第 4 个 token 为例 · 因果掩码下它只能看到 1〜4</text>
+
+    <!-- ==================== STEP 1 ==================== -->
+    <text x="44" y="106" class="step">STEP 1 · 同一个隐藏状态，投影出三种不同用途的向量</text>
+
+    <rect x="44" y="134" width="136" height="84" rx="8" fill="#F5F5F7" stroke="#D2D2D7"
+        stroke-width="1.2" />
+    <text x="112" y="164" text-anchor="middle" dominant-baseline="central" font-size="17"
+        font-weight="700" fill="#1D1D1F">h₄</text>
+    <text x="112" y="190" text-anchor="middle" dominant-baseline="central" class="cap">“fox” 的隐藏状态</text>
+
+    <path class="flow" d="M180 176 C196 176 196 145 208 145" />
+    <path class="flow" d="M180 177 L208 177" />
+    <path class="flow" d="M180 178 C196 178 196 209 208 209" />
+
+    <rect x="212" y="132" width="76" height="26" rx="6" fill="#FFF4E5" stroke="#FF9F0A"
+        stroke-width="1.2" />
+    <text x="250" y="145" text-anchor="middle" dominant-baseline="central" class="mono"
+        font-size="12" fill="#8A4B00">q_proj</text>
+    <rect x="212" y="164" width="76" height="26" rx="6" fill="#EAF3FC" stroke="#EAF3FC"
+        stroke-width="1.2" />
+    <text x="250" y="177" text-anchor="middle" dominant-baseline="central" class="mono"
+        font-size="12" fill="#0071E3">k_proj</text>
+    <rect x="212" y="196" width="76" height="26" rx="6" fill="#EAF8EE" stroke="#EAF8EE"
+        stroke-width="1.2" />
+    <text x="250" y="209" text-anchor="middle" dominant-baseline="central" class="mono"
+        font-size="12" fill="#167333">v_proj</text>
+
+    <path class="flow" d="M288 145 L304 145" />
+    <path class="flow" d="M288 177 L304 177" />
+    <path class="flow" d="M288 209 L304 209" />
+
+    <rect x="308" y="131" width="504" height="28" rx="6" fill="#FFF4E5" stroke="#FF9F0A"
+        stroke-width="1.2" />
+    <text x="322" y="145" dominant-baseline="central" font-size="12.5" fill="#8A4B00"><tspan
+            font-weight="700">Q₄</tspan> ——「我想从上下文里知道什么？」</text>
+    <rect x="694" y="137" width="106" height="18" rx="8" fill="#FFF4E5" />
+    <text x="747" y="147" text-anchor="middle" dominant-baseline="central" font-size="10.5"
+        font-weight="700" fill="#8A4B00">一次性 · 用完即弃</text>
+
+    <rect x="308" y="163" width="504" height="28" rx="6" fill="#EAF3FC" stroke="#EAF3FC"
+        stroke-width="1.2" />
+    <text x="322" y="177" dominant-baseline="central" font-size="12.5" fill="#1E3A8A"><tspan
+            font-weight="700">K₄</tspan> ——「我是什么，凭什么被别人检索到？」</text>
+    <rect x="694" y="169" width="106" height="18" rx="8" fill="#EAF3FC" />
+    <text x="747" y="179" text-anchor="middle" dominant-baseline="central" font-size="10.5"
+        font-weight="700" fill="#1E3A8A">持久 · 进 KV Cache</text>
+
+    <rect x="308" y="195" width="504" height="28" rx="6" fill="#EAF8EE" stroke="#EAF8EE"
+        stroke-width="1.2" />
+    <text x="322" y="209" dominant-baseline="central" font-size="12.5" fill="#167333"><tspan
+            font-weight="700">V₄</tspan> ——「被关注到的话，我贡献什么内容？」</text>
+    <rect x="694" y="201" width="106" height="18" rx="8" fill="#EAF8EE" />
+    <text x="747" y="211" text-anchor="middle" dominant-baseline="central" font-size="10.5"
+        font-weight="700" fill="#167333">持久 · 进 KV Cache</text>
+
+    <line x1="44" y1="250" x2="812" y2="250" stroke="#F5F5F7" stroke-width="1.5" />
+
+    <!-- ==================== STEP 2 ==================== -->
+    <text x="44" y="278" class="step">STEP 2 · Q₄ 与所有历史 K 点积，softmax 得到注意力权重</text>
+
+    <rect x="44" y="308" width="56" height="72" rx="8" fill="#FFF4E5" stroke="#FF9F0A"
+        stroke-width="1.4" />
+    <text x="72" y="344" text-anchor="middle" dominant-baseline="central" font-size="16"
+        font-weight="700" fill="#8A4B00">Q₄</text>
+    <text x="72" y="394" text-anchor="middle" dominant-baseline="central" class="cap">当前的问题</text>
+
+    <path class="flow" d="M104 344 L128 344" />
+    <text x="116" y="330" text-anchor="middle" dominant-baseline="central" class="cap">点积</text>
+
+    <rect x="132" y="308" width="32" height="72" rx="6" fill="#EAF3FC" stroke="#EAF3FC"
+        stroke-width="1.2" />
+    <text x="148" y="344" text-anchor="middle" dominant-baseline="central" font-size="13"
+        font-weight="700" fill="#0071E3">K₁</text>
+    <rect x="170" y="308" width="32" height="72" rx="6" fill="#EAF3FC" stroke="#EAF3FC"
+        stroke-width="1.2" />
+    <text x="186" y="344" text-anchor="middle" dominant-baseline="central" font-size="13"
+        font-weight="700" fill="#0071E3">K₂</text>
+    <rect x="208" y="308" width="32" height="72" rx="6" fill="#EAF3FC" stroke="#EAF3FC"
+        stroke-width="1.2" />
+    <text x="224" y="344" text-anchor="middle" dominant-baseline="central" font-size="13"
+        font-weight="700" fill="#0071E3">K₃</text>
+    <rect x="246" y="308" width="32" height="72" rx="6" fill="#EAF3FC" stroke="#EAF3FC"
+        stroke-width="1.2" />
+    <text x="262" y="344" text-anchor="middle" dominant-baseline="central" font-size="13"
+        font-weight="700" fill="#0071E3">K₄</text>
+    <text x="205" y="394" text-anchor="middle" dominant-baseline="central" class="cap">全部历史
+        Key（来自缓存）</text>
+
+    <path class="flow" d="M282 344 L318 344" />
+
+    <text x="322" y="310" dominant-baseline="central" class="cap">原始分数</text>
+    <rect x="322" y="318" width="196" height="28" rx="6" fill="#F5F5F7" stroke="#D2D2D7"
+        stroke-width="1.2" />
+    <text x="420" y="332" text-anchor="middle" dominant-baseline="central" class="mono"
+        font-size="12.5" fill="#1D1D1F">0.2 3.1 1.4 2.7</text>
+
+    <path class="flow" d="M420 348 L420 366" />
+    <text x="432" y="357" dominant-baseline="central" class="mono" font-size="11" fill="#6E6E73">
+        softmax</text>
+
+    <rect x="322" y="370" width="196" height="28" rx="6" fill="#FFF4E5" stroke="#FFF4E5"
+        stroke-width="1.2" />
+    <text x="420" y="384" text-anchor="middle" dominant-baseline="central" class="mono"
+        font-size="12.5" fill="#8A4B00">.04 .52 .10 .34</text>
+    <text x="322" y="410" dominant-baseline="central" class="cap">注意力权重</text>
+
+    <rect x="556" y="304" width="256" height="102" rx="8" fill="#FFF4E5" stroke="#FF9F0A"
+        stroke-width="1.2" stroke-dasharray="4 3" />
+    <text x="572" y="326" dominant-baseline="central" font-size="12" font-weight="700"
+        fill="#8A4B00">Q₄ 的使命到此结束</text>
+    <text x="572" y="350" dominant-baseline="central" font-size="11.5" fill="#8A4B00">· 权重算出来后，Q₄
+        立刻被丢弃</text>
+    <text x="572" y="371" dominant-baseline="central" font-size="11.5" fill="#8A4B00">· 下一个 token
+        会生成全新的 Q₅</text>
+    <text x="572" y="392" dominant-baseline="central" font-size="11.5" fill="#8A4B00">· 之后没有任何一步会回头读
+        Q₄</text>
+
+    <line x1="44" y1="436" x2="812" y2="436" stroke="#F5F5F7" stroke-width="1.5" />
+
+    <!-- ==================== STEP 3 ==================== -->
+    <text x="44" y="464" class="step">STEP 3 · 用权重对所有历史 V 加权求和，得到新的表示</text>
+
+    <rect x="44" y="488" width="60" height="48" rx="6" fill="#FFF4E5" stroke="#FFF4E5"
+        stroke-width="1.2" />
+    <text x="74" y="512" text-anchor="middle" dominant-baseline="central" font-size="11.5"
+        font-weight="700" fill="#8A4B00">权重</text>
+    <text x="118" y="512" text-anchor="middle" dominant-baseline="central" font-size="15"
+        fill="#6E6E73">×</text>
+
+    <rect x="132" y="488" width="32" height="48" rx="6" fill="#EAF8EE" stroke="#EAF8EE"
+        stroke-width="1.2" />
+    <text x="148" y="512" text-anchor="middle" dominant-baseline="central" font-size="13"
+        font-weight="700" fill="#167333">V₁</text>
+    <rect x="170" y="488" width="32" height="48" rx="6" fill="#EAF8EE" stroke="#EAF8EE"
+        stroke-width="1.2" />
+    <text x="186" y="512" text-anchor="middle" dominant-baseline="central" font-size="13"
+        font-weight="700" fill="#167333">V₂</text>
+    <rect x="208" y="488" width="32" height="48" rx="6" fill="#EAF8EE" stroke="#EAF8EE"
+        stroke-width="1.2" />
+    <text x="224" y="512" text-anchor="middle" dominant-baseline="central" font-size="13"
+        font-weight="700" fill="#167333">V₃</text>
+    <rect x="246" y="488" width="32" height="48" rx="6" fill="#EAF8EE" stroke="#EAF8EE"
+        stroke-width="1.2" />
+    <text x="262" y="512" text-anchor="middle" dominant-baseline="central" font-size="13"
+        font-weight="700" fill="#167333">V₄</text>
+    <text x="205" y="550" text-anchor="middle" dominant-baseline="central" class="cap">全部历史
+        Value（来自缓存）</text>
+
+    <path class="flow" d="M282 512 L318 512" />
+
+    <rect x="322" y="488" width="112" height="48" rx="6" fill="#F5F5F7" stroke="#D2D2D7"
+        stroke-width="1.2" />
+    <text x="378" y="512" text-anchor="middle" dominant-baseline="central" font-size="12"
+        fill="#1D1D1F">加权求和</text>
+
+    <path class="flow" d="M438 512 L462 512" />
+
+    <rect x="466" y="496" width="76" height="32" rx="6" fill="#F5F5F7" stroke="#D2D2D7"
+        stroke-width="1.2" />
+    <text x="504" y="512" text-anchor="middle" dominant-baseline="central" class="mono"
+        font-size="12" fill="#1D1D1F">o_proj</text>
+
+    <path class="flow" d="M546 512 L570 512" />
+
+    <rect x="574" y="488" width="238" height="48" rx="8" fill="#FFF0EF" stroke="#FFF0EF"
+        stroke-width="1.2" />
+    <text x="693" y="505" text-anchor="middle" dominant-baseline="central" font-size="12.5"
+        font-weight="700" fill="#B42318">“fox” 的新表示 h₄′</text>
+    <text x="693" y="523" text-anchor="middle" dominant-baseline="central" font-size="10.5"
+        fill="#B42318">送入 FFN，再进入下一层</text>
+
+    <!-- ==================== Footer ==================== -->
+    <rect x="44" y="568" width="768" height="46" rx="8" fill="#FFF4E5" stroke="#FF9F0A"
+        stroke-width="1.2" />
+    <text x="428" y="584" text-anchor="middle" dominant-baseline="central" font-size="12"
+        fill="#8A4B00">K 和 V 会被后续<tspan font-weight="700">每一个</tspan>新 token 反复读取 → 缓存下来就能省掉重算；</text>
+    <text x="428" y="602" text-anchor="middle" dominant-baseline="central" font-size="12"
+        fill="#8A4B00">Q 每一步都是全新的，且<tspan font-weight="700">永远不会被回看</tspan> → 缓存它只是白白占显存。</text>
+</svg>

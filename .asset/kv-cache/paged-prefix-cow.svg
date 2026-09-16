@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900" role="img"
+    aria-labelledby="title desc">
+    <title id="title">KV Block 复用与 Copy-on-Write：先共享，写入时才复制</title>
+    <desc id="desc">上半部分展示两个请求仅共享完全相同的首个完整 block；下半部分分四步展示两个解码分支共享尾块、写入冲突、复制尾块以及各自继续写入的过程。</desc>
+    <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+            orient="auto">
+            <path d="M0 0 L10 5 L0 10 Z" fill="#6E6E73" />
+        </marker>
+        <marker id="arrowBlue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7"
+            markerHeight="7" orient="auto">
+            <path d="M0 0 L10 5 L0 10 Z" fill="#0071E3" />
+        </marker>
+        <style>
+      text { font-family: Avenir Next, Segoe UI, sans-serif; letter-spacing: 0; }
+      .title { font-size: 30px; font-weight: 700; fill: #172033; }
+      .subtitle { font-size: 16px; fill: #526070; }
+      .heading { font-size: 20px; font-weight: 700; fill: #24324a; }
+      .label { font-size: 15px; font-weight: 700; fill: #334155; }
+      .body { font-size: 14px; fill: #334155; }
+      .small { font-size: 13px; fill: #6E6E73; }
+      .inverse { font-size: 14px; font-weight: 700; fill: #ffffff; }
+      .panel { fill: #ffffff; stroke: #D2D2D7; stroke-width: 1.5; }
+      .shared { fill: #dbeafe; stroke: #4f8fce; stroke-width: 1.7; }
+      .requestA { fill: #dcfce7; stroke: #43a56c; stroke-width: 1.7; }
+      .requestB { fill: #FFF4E5; stroke: #d2a532; stroke-width: 1.7; }
+      .empty { fill: #F5F5F7; stroke: #D2D2D7; stroke-width: 1.3; stroke-dasharray: 4 3; }
+      .copy { fill: #FFF0EF; stroke: #e58b8b; stroke-width: 1.7; }
+    .step { fill: #fbfdff; stroke: #D2D2D7; stroke-width: 1.5; }
+    .danger { fill: #FFF0EF; stroke: #e58b8b; stroke-width: 1.5; }
+    .dangerText { font-size: 13px; font-weight: 700; fill: #b64242; }
+      .arrow { fill: none; stroke: #6E6E73; stroke-width: 2; marker-end: url(#arrow); }
+      .shareArrow { fill: none; stroke: #0071E3; stroke-width: 2.5; marker-end: url(#arrowBlue); }
+      .guide { stroke: #d8e0e9; stroke-width: 1; stroke-dasharray: 5 5; }
+    </style>
+    </defs>
+  <rect width="100%" height="100%" fill="#F5F5F7"/>
+
+    <rect width="1200" height="820" fill="#F5F5F7" />
+    <text x="600" y="48" text-anchor="middle" class="title">KV Block 复用：先共享，真正写入时才复制</text>
+    <text x="600" y="78" text-anchor="middle" class="subtitle">像共用一份只读草稿：谁要续写，谁才复印最后一页</text>
+
+    <rect x="48" y="108" width="1104" height="300" rx="8" class="panel" />
+    <text x="76" y="142" class="heading">Automatic Prefix Caching：命中到第一个分歧 block 为止</text>
+    <text x="76" y="167" class="small">block size = 4；相同 token 只是必要条件，模型状态与 cache salt 也必须属于同一缓存域</text>
+
+    <text x="76" y="222" class="label">请求 A</text>
+    <g transform="translate(170 190)">
+        <rect x="0" y="0" width="230" height="52" rx="6" class="shared" />
+        <text x="115" y="32" text-anchor="middle" class="label">[A B C D] · hash H₀</text>
+        <rect x="245" y="0" width="230" height="52" rx="6" class="requestA" />
+        <text x="360" y="32" text-anchor="middle" class="label">[E F G H] · hash H₁ᴬ</text>
+        <rect x="490" y="0" width="230" height="52" rx="6" class="requestA" />
+        <text x="605" y="24" text-anchor="middle" class="label">[I J _ _]</text>
+        <text x="605" y="43" text-anchor="middle" class="small">未填满尾块</text>
+    </g>
+
+    <text x="76" y="294" class="label">请求 B</text>
+    <g transform="translate(170 262)">
+        <rect x="0" y="0" width="230" height="52" rx="6" class="shared" />
+        <text x="115" y="32" text-anchor="middle" class="label">[A B C D] · hash H₀</text>
+        <rect x="245" y="0" width="230" height="52" rx="6" class="requestB" />
+        <text x="360" y="32" text-anchor="middle" class="label">[E F G X] · hash H₁ᴮ</text>
+        <rect x="490" y="0" width="230" height="52" rx="6" class="requestB" />
+        <text x="605" y="32" text-anchor="middle" class="label">[K _ _ _]</text>
+    </g>
+
+    <path d="M170 216 H145 V330 H845" class="shareArrow" />
+    <path d="M285 314 V354 H845" class="shareArrow" />
+    <rect x="850" y="310" width="244" height="64" rx="7" class="shared" />
+    <text x="972" y="337" text-anchor="middle" class="label">物理 block #12</text>
+    <text x="972" y="359" text-anchor="middle" class="small">只存一份 · ref_count = 2</text>
+
+    <line x1="48" y1="430" x2="1152" y2="430" class="guide" />
+
+    <rect x="48" y="452" width="1104" height="410" rx="8" class="panel" />
+    <text x="76" y="486" class="heading">Copy-on-Write：分支读取可共享，写入前必须分离</text>
+
+    <rect x="250" y="502" width="700" height="42" rx="6" fill="#EAF3FC" stroke="#EAF3FC" />
+    <text x="600" y="528" text-anchor="middle" class="body">类比：两个人共用一份只读草稿；谁要续写，谁才复印最后一页</text>
+
+    <rect x="70" y="566" width="240" height="210" rx="7" class="step" />
+    <circle cx="96" cy="594" r="18" fill="#0071E3" />
+    <text x="96" y="600" text-anchor="middle" class="inverse">1</text>
+    <text x="124" y="600" class="label">分支产生：不复制</text>
+    <rect x="90" y="624" width="92" height="40" rx="5" class="shared" />
+    <text x="136" y="649" text-anchor="middle" class="small">Beam A → #8</text>
+    <rect x="198" y="624" width="92" height="40" rx="5" class="shared" />
+    <text x="244" y="649" text-anchor="middle" class="small">Beam B → #8</text>
+    <path d="M136 664 V684 M244 664 V684" class="shareArrow" />
+    <rect x="90" y="688" width="200" height="62" rx="6" class="shared" />
+    <text x="190" y="714" text-anchor="middle" class="label">共享物理块 #8</text>
+    <text x="190" y="736" text-anchor="middle" class="small">[p q _ _] · ref = 2</text>
+
+    <path d="M310 671 H335" class="arrow" />
+
+    <rect x="340" y="566" width="240" height="210" rx="7" class="step" />
+    <circle cx="366" cy="594" r="18" fill="#FF3B30" />
+    <text x="366" y="600" text-anchor="middle" class="inverse">2</text>
+    <text x="394" y="600" class="label">Beam B 准备写 r</text>
+    <rect x="365" y="624" width="190" height="58" rx="6" class="shared" />
+    <text x="460" y="650" text-anchor="middle" class="label">共享块 #8</text>
+    <text x="460" y="671" text-anchor="middle" class="small">[p q _ _] · ref = 2</text>
+    <rect x="365" y="700" width="190" height="50" rx="6" class="danger" />
+    <text x="460" y="721" text-anchor="middle" class="dangerText">不能直接写入 #8</text>
+    <text x="460" y="741" text-anchor="middle" class="small">否则 Beam A 也会看到 r</text>
+
+    <path d="M580 671 H605" class="arrow" />
+
+    <rect x="610" y="566" width="240" height="210" rx="7" class="step" />
+    <circle cx="636" cy="594" r="18" fill="#8A4B00" />
+    <text x="636" y="600" text-anchor="middle" class="inverse">3</text>
+    <text x="664" y="600" class="label">触发写时复制</text>
+    <rect x="635" y="624" width="190" height="42" rx="6" class="copy" />
+    <text x="730" y="650" text-anchor="middle" class="label">申请新块 #15</text>
+    <path d="M730 666 V684" class="arrow" />
+    <rect x="635" y="690" width="190" height="60" rx="6" class="copy" />
+    <text x="730" y="716" text-anchor="middle" class="label">复制已用 slots [p q]</text>
+    <text x="730" y="738" text-anchor="middle" class="small">Beam B table：#8 → #15</text>
+
+    <path d="M850 671 H875" class="arrow" />
+
+    <rect x="880" y="566" width="240" height="210" rx="7" class="step" />
+    <circle cx="906" cy="594" r="18" fill="#167333" />
+    <text x="906" y="600" text-anchor="middle" class="inverse">4</text>
+    <text x="934" y="600" class="label">各自继续，互不影响</text>
+    <rect x="905" y="624" width="190" height="56" rx="6" class="shared" />
+    <text x="1000" y="648" text-anchor="middle" class="label">#8 · Beam A</text>
+    <text x="1000" y="668" text-anchor="middle" class="small">[p q _ _] · ref = 1</text>
+    <rect x="905" y="694" width="190" height="56" rx="6" class="copy" />
+    <text x="1000" y="718" text-anchor="middle" class="label">#15 · Beam B</text>
+    <text x="1000" y="738" text-anchor="middle" class="small">[p q r _] · ref = 1</text>
+
+    <rect x="130" y="798" width="940" height="42" rx="6" fill="#EAF8EE" stroke="#34C759" />
+    <text x="600" y="824" text-anchor="middle" class="body">只复制将被修改的共享尾块，不复制整条 KV
+        Cache；若尾块已满，直接申请新块，无需复制</text>
+</svg>

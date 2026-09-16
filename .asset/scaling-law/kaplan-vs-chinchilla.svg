@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" role="img"
+    aria-labelledby="title desc"
+    content="&lt;mxfile host=&quot;app.diagrams.net&quot; modified=&quot;2026-09-16T00:00:00.000Z&quot; agent=&quot;GitHub Copilot&quot; version=&quot;24.7.17&quot; type=&quot;device&quot; compressed=&quot;false&quot;&gt;&lt;diagram id=&quot;kaplan-chinchilla&quot; name=&quot;Page-1&quot;&gt;&lt;mxGraphModel dx=&quot;1200&quot; dy=&quot;700&quot; grid=&quot;1&quot; gridSize=&quot;10&quot; page=&quot;1&quot; pageWidth=&quot;1200&quot; pageHeight=&quot;700&quot;&gt;&lt;root&gt;&lt;mxCell id=&quot;0&quot;/&gt;&lt;mxCell id=&quot;1&quot; parent=&quot;0&quot;/&gt;&lt;mxCell id=&quot;2&quot; value=&quot;Two Answers to the Same Compute Budget&quot; style=&quot;text;html=1;fontFamily=Helvetica;fontSize=30;fontStyle=1;fontColor=#1D1D1F;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;&lt;mxGeometry x=&quot;50&quot; y=&quot;25&quot; width=&quot;800&quot; height=&quot;45&quot; as=&quot;geometry&quot;/&gt;&lt;/mxCell&gt;&lt;mxCell id=&quot;3&quot; value=&quot;KAPLAN • 2020&quot; style=&quot;swimlane;rounded=1;arcSize=8;html=1;fontFamily=Helvetica;fillColor=#FFFFFF;swimlaneFillColor=#FAFAFC;strokeColor=#D2D2D7;fontSize=19;fontStyle=1;fontColor=#1D1D1F;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;&lt;mxGeometry x=&quot;50&quot; y=&quot;120&quot; width=&quot;520&quot; height=&quot;430&quot; as=&quot;geometry&quot;/&gt;&lt;/mxCell&gt;&lt;mxCell id=&quot;4&quot; value=&quot;CHINCHILLA • 2022&quot; style=&quot;swimlane;rounded=1;arcSize=8;html=1;fontFamily=Helvetica;fillColor=#FFFFFF;swimlaneFillColor=#FAFAFC;strokeColor=#0071E3;fontSize=19;fontStyle=1;fontColor=#1D1D1F;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;&lt;mxGeometry x=&quot;630&quot; y=&quot;120&quot; width=&quot;520&quot; height=&quot;430&quot; as=&quot;geometry&quot;/&gt;&lt;/mxCell&gt;&lt;mxCell id=&quot;5&quot; value=&quot;Favor model size over data&quot; style=&quot;text;html=1;fontFamily=Helvetica;fontSize=20;fontStyle=1;fontColor=#1D1D1F;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;&lt;mxGeometry x=&quot;140&quot; y=&quot;190&quot; width=&quot;340&quot; height=&quot;35&quot; as=&quot;geometry&quot;/&gt;&lt;/mxCell&gt;&lt;mxCell id=&quot;6&quot; value=&quot;Grow model and data together&quot; style=&quot;text;html=1;fontFamily=Helvetica;fontSize=20;fontStyle=1;fontColor=#0071E3;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;&lt;mxGeometry x=&quot;720&quot; y=&quot;190&quot; width=&quot;340&quot; height=&quot;35&quot; as=&quot;geometry&quot;/&gt;&lt;/mxCell&gt;&lt;mxCell id=&quot;7&quot; value=&quot;Compute-optimal ≈ 20 tokens per parameter&quot; style=&quot;rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#E8F2FF;strokeColor=#B8D8FA;fontColor=#0071E3;fontSize=16;fontStyle=1;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;&lt;mxGeometry x=&quot;705&quot; y=&quot;460&quot; width=&quot;370&quot; height=&quot;54&quot; as=&quot;geometry&quot;/&gt;&lt;/mxCell&gt;&lt;mxCell id=&quot;8&quot; value=&quot;Compute-optimal is not a data ceiling. Inference economics can favor more training tokens.&quot; style=&quot;rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#FFFFFF;strokeColor=#D2D2D7;fontColor=#1D1D1F;fontSize=17;fontStyle=1;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;&lt;mxGeometry x=&quot;125&quot; y=&quot;590&quot; width=&quot;950&quot; height=&quot;58&quot; as=&quot;geometry&quot;/&gt;&lt;/mxCell&gt;&lt;/root&gt;&lt;/mxGraphModel&gt;&lt;/diagram&gt;&lt;/mxfile&gt;">
+    <title id="title">Kaplan and Chinchilla compute allocation</title>
+    <desc id="desc">Kaplan favors model parameters while Chinchilla balances model parameters and
+        training tokens under the same compute budget.</desc>
+    <rect width="1200" height="700" fill="#F5F5F7" />
+    <g
+        font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif">
+        <text x="50" y="58" fill="#1D1D1F" font-size="32" font-weight="600">Two Answers to the Same
+            Compute Budget</text>
+        <text x="50" y="88" fill="#6E6E73" font-size="16">How should parameters and training tokens
+            grow?</text>
+
+        <rect x="50" y="120" width="520" height="430" rx="12" fill="#FFFFFF" stroke="#D2D2D7" />
+        <rect x="50" y="120" width="520" height="62" rx="12" fill="#FAFAFC" stroke="#D2D2D7" />
+        <text x="310" y="158" fill="#1D1D1F" font-size="20" font-weight="600" text-anchor="middle">KAPLAN
+            • 2020</text>
+        <text x="310" y="222" fill="#1D1D1F" font-size="20" font-weight="600" text-anchor="middle">Favor
+            model size over data</text>
+        <text x="130" y="272" fill="#6E6E73" font-size="14" font-weight="600">PARAMETERS</text>
+        <rect x="130" y="292" width="360" height="66" rx="10" fill="#1D1D1F" />
+        <g fill="#FFFFFF">
+            <circle cx="165" cy="325" r="10" />
+            <circle cx="200" cy="325" r="10" />
+            <circle cx="235" cy="325" r="10" />
+            <circle cx="270" cy="325" r="10" />
+            <circle cx="305" cy="325" r="10" />
+            <circle cx="340" cy="325" r="10" />
+            <circle cx="375" cy="325" r="10" />
+            <circle cx="410" cy="325" r="10" />
+            <circle cx="445" cy="325" r="10" />
+        </g>
+        <text x="130" y="397" fill="#6E6E73" font-size="14" font-weight="600">TRAINING TOKENS</text>
+        <rect x="130" y="417" width="105" height="38" rx="8" fill="#86868B" />
+        <text x="310" y="500" fill="#6E6E73" font-size="15" text-anchor="middle">Large model •
+            comparatively little data</text>
+
+        <rect x="630" y="120" width="520" height="430" rx="12" fill="#FFFFFF" stroke="#0071E3"
+            stroke-width="2" />
+        <rect x="630" y="120" width="520" height="62" rx="12" fill="#FAFAFC" stroke="#0071E3"
+            stroke-width="2" />
+        <text x="890" y="158" fill="#1D1D1F" font-size="20" font-weight="600" text-anchor="middle">CHINCHILLA
+            • 2022</text>
+        <text x="890" y="222" fill="#0071E3" font-size="20" font-weight="600" text-anchor="middle">Grow
+            model and data together</text>
+        <text x="710" y="272" fill="#6E6E73" font-size="14" font-weight="600">PARAMETERS</text>
+        <rect x="710" y="292" width="235" height="66" rx="10" fill="#1D1D1F" />
+        <g fill="#FFFFFF">
+            <circle cx="745" cy="325" r="10" />
+            <circle cx="780" cy="325" r="10" />
+            <circle cx="815" cy="325" r="10" />
+            <circle cx="850" cy="325" r="10" />
+            <circle cx="885" cy="325" r="10" />
+            <circle cx="920" cy="325" r="10" />
+        </g>
+        <text x="710" y="397" fill="#6E6E73" font-size="14" font-weight="600">TRAINING TOKENS</text>
+        <rect x="710" y="417" width="360" height="38" rx="8" fill="#0071E3" />
+        <rect x="705" y="474" width="370" height="46" rx="10" fill="#E8F2FF" stroke="#B8D8FA" />
+        <text x="890" y="503" fill="#0071E3" font-size="15" font-weight="600" text-anchor="middle">COMPUTE-OPTIMAL
+            ≈ 20 TOKENS / PARAMETER</text>
+
+        <rect x="125" y="590" width="950" height="58" rx="12" fill="#FFFFFF" stroke="#D2D2D7" />
+        <rect x="125" y="590" width="5" height="58" rx="2" fill="#0071E3" />
+        <text x="600" y="616" fill="#1D1D1F" font-size="17" font-weight="600" text-anchor="middle">Compute-optimal
+            is not a data ceiling.</text>
+        <text x="600" y="638" fill="#6E6E73" font-size="14" text-anchor="middle">Inference economics
+            can favor spending more training compute on a smaller model.</text>
+    </g>
+</svg>

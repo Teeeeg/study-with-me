@@ -6,4 +6,4 @@ nav: false
 ---
 
 Notes I write while learning, kept in the open so future me can find them again.
-Every page exists in English and Chinese — use the toggle in the header.
+Chinese is the default; use the header toggle when an English version is available.

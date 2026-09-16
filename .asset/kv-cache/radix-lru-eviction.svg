@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620" role="img"
+    aria-labelledby="title desc">
+    <title id="title">RadixAttention 的叶子 LRU 淘汰</title>
+    <desc id="desc">展示 vllm 叶子节点被淘汰后，只有一个子节点的 hello 前缀与 world 后缀重新合并为 hello world。</desc>
+    <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+            orient="auto">
+            <path d="M0 0 L10 5 L0 10 Z" fill="#6E6E73" />
+        </marker>
+        <style>
+      text { font-family: Avenir Next, Segoe UI, sans-serif; letter-spacing: 0; }
+      .title { font-size: 30px; font-weight: 700; fill: #172033; }
+      .subtitle { font-size: 16px; fill: #526070; }
+      .heading { font-size: 20px; font-weight: 700; fill: #24324a; }
+      .node { font-size: 17px; font-weight: 700; fill: #24324a; }
+      .body { font-size: 14px; fill: #475569; }
+      .small { font-size: 13px; fill: #6E6E73; }
+      .panel { fill: #fff; stroke: #D2D2D7; stroke-width: 1.5; }
+      .root { fill: #eef2f7; stroke: #94a3b8; stroke-width: 1.5; }
+      .keep { fill: #dbeafe; stroke: #4f8fce; stroke-width: 1.5; }
+      .evict { fill: #FFF0EF; stroke: #FF3B30; stroke-width: 2; stroke-dasharray: 6 4; }
+      .merged { fill: #dcfce7; stroke: #43a56c; stroke-width: 2; }
+      .edge { fill: none; stroke: #6E6E73; stroke-width: 2; }
+      .arrow { fill: none; stroke: #6E6E73; stroke-width: 2.5; marker-end: url(#arrow); }
+    </style>
+    </defs>
+  <rect width="100%" height="100%" fill="#F5F5F7"/>
+    <rect width="1200" height="620" fill="#F5F5F7" />
+    <text x="600" y="48" text-anchor="middle" class="title">LRU 淘汰：先删叶子，再恢复路径压缩</text>
+    <text x="600" y="78" text-anchor="middle" class="subtitle">共享前缀不能直接删除；只淘汰未被引用且最久未访问的叶子节点</text>
+
+    <rect x="52" y="112" width="438" height="410" rx="8" class="panel" />
+    <text x="271" y="150" text-anchor="middle" class="heading">1. 选择可淘汰叶子</text>
+    <rect x="221" y="177" width="100" height="44" rx="7" class="root" />
+    <text x="271" y="205" text-anchor="middle" class="node">root</text>
+    <path d="M271 221 V260" class="edge" />
+    <rect x="181" y="260" width="180" height="52" rx="7" class="keep" />
+    <text x="271" y="292" text-anchor="middle" class="node">“hello ”</text>
+    <path d="M271 312 V342 M271 342 L171 380 M271 342 L371 380" class="edge" />
+    <rect x="106" y="380" width="130" height="52" rx="7" class="keep" />
+    <text x="171" y="412" text-anchor="middle" class="node">“world”</text>
+    <rect x="306" y="380" width="130" height="52" rx="7" class="evict" />
+    <text x="371" y="412" text-anchor="middle" class="node">“vllm”</text>
+    <text x="371" y="456" text-anchor="middle" class="small">ref = 0 · 最久未访问</text>
+    <path d="M411 360 L438 333" stroke="#FF3B30" stroke-width="3" />
+    <path d="M438 360 L411 333" stroke="#FF3B30" stroke-width="3" />
+    <text x="171" y="476" text-anchor="middle" class="small">仍保留</text>
+
+    <path d="M510 316 H665" class="arrow" />
+    <text x="587" y="291" text-anchor="middle" class="body">释放叶子的 KV blocks</text>
+    <text x="587" y="340" text-anchor="middle" class="body">父节点只剩一个孩子</text>
+
+    <rect x="694" y="112" width="454" height="410" rx="8" class="panel" />
+    <text x="921" y="150" text-anchor="middle" class="heading">2. 合并单子节点路径</text>
+    <rect x="871" y="177" width="100" height="44" rx="7" class="root" />
+    <text x="921" y="205" text-anchor="middle" class="node">root</text>
+    <path d="M921 221 V294" class="edge" />
+    <rect x="806" y="294" width="230" height="62" rx="7" class="merged" />
+    <text x="921" y="332" text-anchor="middle" class="node">“hello world”</text>
+    <rect x="777" y="401" width="288" height="70" rx="7" fill="#EAF8EE" stroke="#34C759" />
+    <text x="921" y="429" text-anchor="middle" class="body">合并 key 与 KV block 引用</text>
+    <text x="921" y="453" text-anchor="middle" class="small">减少无意义的中间节点，保持 Radix Tree 压缩</text>
+
+    <rect x="171" y="552" width="858" height="40" rx="6" fill="#FFF4E5" stroke="#FF9F0A" />
+    <text x="600" y="577" text-anchor="middle" class="body">为什么必须从叶子开始？删除中间共享节点会让它下面所有仍有效的缓存路径同时失效</text>
+</svg>

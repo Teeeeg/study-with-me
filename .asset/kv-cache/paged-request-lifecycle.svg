@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" role="img"
+    aria-labelledby="title desc">
+    <title id="title">PagedAttention 请求生命周期</title>
+    <desc id="desc">请求从 token 化、前缀查询、预算协调和 block 分配进入模型执行，再根据继续、资源不足或结束三种状态进入下一轮、抢占卸载或释放缓存。</desc>
+    <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+            orient="auto">
+            <path d="M0 0 L10 5 L0 10 Z" fill="#6E6E73" />
+        </marker>
+        <marker id="arrowBlue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7"
+            markerHeight="7" orient="auto">
+            <path d="M0 0 L10 5 L0 10 Z" fill="#0071E3" />
+        </marker>
+        <style>
+      text { font-family: Avenir Next, Segoe UI, sans-serif; letter-spacing: 0; }
+      .title { font-size: 30px; font-weight: 700; fill: #172033; }
+      .subtitle { font-size: 16px; fill: #526070; }
+      .heading { font-size: 18px; font-weight: 700; fill: #24324a; }
+      .label { font-size: 15px; font-weight: 700; fill: #334155; }
+      .body { font-size: 14px; fill: #334155; }
+      .small { font-size: 13px; fill: #6E6E73; }
+      .inverse { font-size: 14px; font-weight: 700; fill: #ffffff; }
+      .panel { fill: #ffffff; stroke: #D2D2D7; stroke-width: 1.5; }
+      .input { fill: #eef2f7; stroke: #94a3b8; stroke-width: 1.5; }
+      .schedule { fill: #dbeafe; stroke: #4f8fce; stroke-width: 1.7; }
+      .cache { fill: #FFF4E5; stroke: #d2a532; stroke-width: 1.7; }
+      .worker { fill: #0071E3; stroke: #1f548c; stroke-width: 1.7; }
+      .state { fill: #dcfce7; stroke: #43a56c; stroke-width: 1.7; }
+      .warning { fill: #FFF0EF; stroke: #e58b8b; stroke-width: 1.7; }
+      .arrow { fill: none; stroke: #6E6E73; stroke-width: 2.2; marker-end: url(#arrow); }
+      .loop { fill: none; stroke: #0071E3; stroke-width: 2.5; stroke-dasharray: 7 5; marker-end: url(#arrowBlue); }
+      .guide { stroke: #d8e0e9; stroke-width: 1; stroke-dasharray: 5 5; }
+    </style>
+    </defs>
+  <rect width="100%" height="100%" fill="#F5F5F7"/>
+
+    <rect width="1200" height="760" fill="#F5F5F7" />
+    <text x="600" y="48" text-anchor="middle" class="title">一条请求如何穿过调度器、KV Cache 与 Worker</text>
+    <text x="600" y="78" text-anchor="middle" class="subtitle">每一轮都同时受 token budget 与 block budget
+        约束，执行完成后再决定下一步</text>
+
+    <rect x="45" y="108" width="1110" height="486" rx="8" class="panel" />
+    <text x="72" y="142" class="heading">请求主路径</text>
+
+    <line x1="72" y1="250" x2="1128" y2="250" class="guide" />
+    <line x1="72" y1="433" x2="1128" y2="433" class="guide" />
+
+    <g transform="translate(76 174)">
+        <circle cx="30" cy="50" r="27" fill="#6E6E73" />
+        <text x="30" y="56" text-anchor="middle" class="inverse">1</text>
+        <rect x="70" y="10" width="170" height="80" rx="7" class="input" />
+        <text x="155" y="42" text-anchor="middle" class="label">请求到达</text>
+        <text x="155" y="65" text-anchor="middle" class="small">Tokenize · 长度未知</text>
+    </g>
+
+    <path d="M316 224 H356" class="arrow" />
+
+    <g transform="translate(356 174)">
+        <circle cx="30" cy="50" r="27" fill="#0071E3" />
+        <text x="30" y="56" text-anchor="middle" class="inverse">2</text>
+        <rect x="70" y="10" width="182" height="80" rx="7" class="schedule" />
+        <text x="161" y="42" text-anchor="middle" class="label">查询已计算前缀</text>
+        <text x="161" y="65" text-anchor="middle" class="small">命中完整 blocks 则复用</text>
+    </g>
+
+    <path d="M608 224 H648" class="arrow" />
+
+    <g transform="translate(648 158)">
+        <circle cx="30" cy="66" r="27" fill="#8A4B00" />
+        <text x="30" y="72" text-anchor="middle" class="inverse">3</text>
+        <rect x="70" y="0" width="202" height="58" rx="7" class="schedule" />
+        <text x="171" y="25" text-anchor="middle" class="label">Scheduler</text>
+        <text x="171" y="46" text-anchor="middle" class="small">本轮 token budget</text>
+        <rect x="70" y="72" width="202" height="58" rx="7" class="cache" />
+        <text x="171" y="97" text-anchor="middle" class="label">KV Cache Manager</text>
+        <text x="171" y="118" text-anchor="middle" class="small">可用 block budget</text>
+    </g>
+
+    <path d="M920 224 H960" class="arrow" />
+
+    <g transform="translate(960 174)">
+        <circle cx="30" cy="50" r="27" fill="#8A4B00" />
+        <text x="30" y="56" text-anchor="middle" class="inverse">4</text>
+        <rect x="70" y="10" width="96" height="80" rx="7" class="cache" />
+        <text x="118" y="40" text-anchor="middle" class="label">预留</text>
+        <text x="118" y="61" text-anchor="middle" class="small">blocks</text>
+        <text x="118" y="79" text-anchor="middle" class="small">slots</text>
+    </g>
+
+    <path d="M1078 264 V340" class="arrow" />
+
+    <g transform="translate(864 340)">
+        <circle cx="250" cy="50" r="27" fill="#0071E3" />
+        <text x="250" y="56" text-anchor="middle" class="inverse">5</text>
+        <rect x="0" y="10" width="210" height="80" rx="7" class="worker" />
+        <text x="105" y="40" text-anchor="middle" class="inverse">模型 Forward</text>
+        <text x="105" y="64" text-anchor="middle" class="inverse">读取历史 KV · 写入新 KV</text>
+    </g>
+
+    <path d="M864 390 H816" class="arrow" />
+
+    <g transform="translate(576 340)">
+        <circle cx="250" cy="50" r="27" fill="#167333" />
+        <text x="250" y="56" text-anchor="middle" class="inverse">6</text>
+        <rect x="0" y="10" width="210" height="80" rx="7" class="state" />
+        <text x="105" y="40" text-anchor="middle" class="label">更新请求状态</text>
+        <text x="105" y="64" text-anchor="middle" class="small">token 数 · block 状态 · 采样</text>
+    </g>
+
+    <path d="M576 390 H526" class="arrow" />
+
+    <g transform="translate(278 338)">
+        <polygon points="124,0 248,52 124,104 0,52" class="input" />
+        <text x="124" y="48" text-anchor="middle" class="label">请求状态？</text>
+        <text x="124" y="69" text-anchor="middle" class="small">继续 / 不足 / 完成</text>
+    </g>
+
+    <path d="M278 390 H226" class="arrow" />
+    <rect x="78" y="350" width="148" height="80" rx="7" class="schedule" />
+    <text x="152" y="381" text-anchor="middle" class="label">继续生成</text>
+    <text x="152" y="404" text-anchor="middle" class="small">下一轮按需追加 block</text>
+
+    <path d="M152 350 C152 304 1040 324 1040 273" class="loop" />
+    <text x="600" y="319" text-anchor="middle" class="small">next scheduling step</text>
+
+    <path d="M350 442 V486" class="arrow" />
+    <rect x="248" y="486" width="204" height="72" rx="7" class="warning" />
+    <text x="350" y="515" text-anchor="middle" class="label">资源不足</text>
+    <text x="350" y="538" text-anchor="middle" class="small">排队 · 抢占 · 重算 · Offload</text>
+
+    <path d="M454 442 V466 H616 V486" class="arrow" />
+    <rect x="486" y="486" width="260" height="72" rx="7" class="state" />
+    <text x="616" y="515" text-anchor="middle" class="label">请求完成或取消</text>
+    <text x="616" y="538" text-anchor="middle" class="small">引用计数减一 · 释放或保留为缓存</text>
+
+    <rect x="166" y="624" width="868" height="82" rx="7" fill="#EAF3FC" stroke="#EAF3FC" />
+    <text x="600" y="653" text-anchor="middle" class="label">PagedAttention 不是孤立的 kernel 优化</text>
+    <text x="600" y="678" text-anchor="middle" class="body">调度器决定“这一轮算多少”，缓存管理器保证“这些 token
+        有地方写”，Worker 根据 metadata 完成实际读写</text>
+</svg>

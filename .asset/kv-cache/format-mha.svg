@@ -1,0 +1,165 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 510" width="800" height="510">
+  <defs>
+    
+    
+    <style>
+      text { font-family: Avenir Next, Segoe UI, sans-serif; }
+      .mono { font-family: Avenir Next, Segoe UI, sans-serif; }
+    </style>
+  </defs>
+
+  <!-- Card background -->
+  <rect width="100%" height="100%" fill="#F5F5F7"/>
+  <rect x="16" y="12" width="768" height="486" rx="8" fill="#FFFFFF" stroke="#D2D2D7" stroke-width="1.5"/>
+
+  <!-- ==== Title ==== -->
+  <text x="400" y="46" text-anchor="middle" dominant-baseline="central" font-size="22" font-weight="700" fill="#1D1D1F">MHA（多头注意力）</text>
+  <text x="400" y="74" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#6E6E73">64 Q heads → 64 KV heads · 1:1 独立配对 · num_kv_heads = 64</text>
+
+  <!-- ==== Head visualization ==== -->
+  <!-- Column centers: cx = 140, 218, 296, 374, 452, 530, 590(···), 660(Q₆₃) -->
+  <!-- Box dimensions: w=48, h=24, rx=5 -->
+
+  <!-- Alternating column background bands -->
+  <rect x="116" y="100" width="48" height="140" rx="6" fill="#F5F5F7" opacity="0.6"/>
+  <rect x="272" y="100" width="48" height="140" rx="6" fill="#F5F5F7" opacity="0.6"/>
+  <rect x="428" y="100" width="48" height="140" rx="6" fill="#F5F5F7" opacity="0.6"/>
+
+  <!-- Q→K connector lines -->
+  <g stroke="#D2D2D7" stroke-width="1" stroke-dasharray="3,3" opacity="0.7">
+    <line x1="140" y1="128" x2="140" y2="166"/>
+    <line x1="218" y1="128" x2="218" y2="166"/>
+    <line x1="296" y1="128" x2="296" y2="166"/>
+    <line x1="374" y1="128" x2="374" y2="166"/>
+    <line x1="452" y1="128" x2="452" y2="166"/>
+    <line x1="530" y1="128" x2="530" y2="166"/>
+    <line x1="660" y1="128" x2="660" y2="166"/>
+  </g>
+
+  <!-- K→V connector lines (lighter) -->
+  <g stroke="#D2D2D7" stroke-width="0.8" opacity="0.5">
+    <line x1="140" y1="190" x2="140" y2="212"/>
+    <line x1="218" y1="190" x2="218" y2="212"/>
+    <line x1="296" y1="190" x2="296" y2="212"/>
+    <line x1="374" y1="190" x2="374" y2="212"/>
+    <line x1="452" y1="190" x2="452" y2="212"/>
+    <line x1="530" y1="190" x2="530" y2="212"/>
+    <line x1="660" y1="190" x2="660" y2="212"/>
+  </g>
+
+  <!-- Q row (y=104, h=24, center=116) -->
+  <g font-size="12" font-weight="600" fill="#FFFFFF" text-anchor="middle" dominant-baseline="central">
+    <rect x="116" y="104" width="48" height="24" rx="5" fill="#0071E3"/><text x="140" y="116">Q₀</text>
+    <rect x="194" y="104" width="48" height="24" rx="5" fill="#0071E3"/><text x="218" y="116">Q₁</text>
+    <rect x="272" y="104" width="48" height="24" rx="5" fill="#0071E3"/><text x="296" y="116">Q₂</text>
+    <rect x="350" y="104" width="48" height="24" rx="5" fill="#0071E3"/><text x="374" y="116">Q₃</text>
+    <rect x="428" y="104" width="48" height="24" rx="5" fill="#0071E3"/><text x="452" y="116">Q₄</text>
+    <rect x="506" y="104" width="48" height="24" rx="5" fill="#0071E3"/><text x="530" y="116">Q₅</text>
+    <text x="590" y="116" font-size="16" fill="#6E6E73" font-weight="400">···</text>
+    <rect x="636" y="104" width="48" height="24" rx="5" fill="#0071E3"/><text x="660" y="116">Q₆₃</text>
+  </g>
+
+  <!-- Row labels -->
+  <text x="24" y="116" dominant-baseline="central" font-size="12" font-weight="600" fill="#0071E3">Q<tspan font-weight="400" font-size="10" fill="#6E6E73">（不缓存）</tspan></text>
+  <text x="24" y="178" dominant-baseline="central" font-size="12" font-weight="600" fill="#FF9F0A">K<tspan font-weight="400" font-size="10" fill="#6E6E73">（缓存）</tspan></text>
+  <text x="24" y="224" dominant-baseline="central" font-size="12" font-weight="600" fill="#34C759">V<tspan font-weight="400" font-size="10" fill="#6E6E73">（缓存）</tspan></text>
+
+  <!-- K row (y=166, h=24, center=178) -->
+  <g font-size="12" font-weight="600" fill="#FFFFFF" text-anchor="middle" dominant-baseline="central">
+    <rect x="116" y="166" width="48" height="24" rx="5" fill="#FF9F0A"/><text x="140" y="178">K₀</text>
+    <rect x="194" y="166" width="48" height="24" rx="5" fill="#FF9F0A"/><text x="218" y="178">K₁</text>
+    <rect x="272" y="166" width="48" height="24" rx="5" fill="#FF9F0A"/><text x="296" y="178">K₂</text>
+    <rect x="350" y="166" width="48" height="24" rx="5" fill="#FF9F0A"/><text x="374" y="178">K₃</text>
+    <rect x="428" y="166" width="48" height="24" rx="5" fill="#FF9F0A"/><text x="452" y="178">K₄</text>
+    <rect x="506" y="166" width="48" height="24" rx="5" fill="#FF9F0A"/><text x="530" y="178">K₅</text>
+    <text x="590" y="178" font-size="16" fill="#6E6E73" font-weight="400">···</text>
+    <rect x="636" y="166" width="48" height="24" rx="5" fill="#FF9F0A"/><text x="660" y="178">K₆₃</text>
+  </g>
+
+  <text x="24" y="178" dominant-baseline="central" font-size="12" font-weight="600" fill="#FF9F0A">K</text>
+
+  <!-- V row (y=212, h=24, center=224) -->
+  <g font-size="12" font-weight="600" fill="#FFFFFF" text-anchor="middle" dominant-baseline="central">
+    <rect x="116" y="212" width="48" height="24" rx="5" fill="#34C759"/><text x="140" y="224">V₀</text>
+    <rect x="194" y="212" width="48" height="24" rx="5" fill="#34C759"/><text x="218" y="224">V₁</text>
+    <rect x="272" y="212" width="48" height="24" rx="5" fill="#34C759"/><text x="296" y="224">V₂</text>
+    <rect x="350" y="212" width="48" height="24" rx="5" fill="#34C759"/><text x="374" y="224">V₃</text>
+    <rect x="428" y="212" width="48" height="24" rx="5" fill="#34C759"/><text x="452" y="224">V₄</text>
+    <rect x="506" y="212" width="48" height="24" rx="5" fill="#34C759"/><text x="530" y="224">V₅</text>
+    <text x="590" y="224" font-size="16" fill="#6E6E73" font-weight="400">···</text>
+    <rect x="636" y="212" width="48" height="24" rx="5" fill="#34C759"/><text x="660" y="224">V₆₃</text>
+  </g>
+
+  <text x="24" y="224" dominant-baseline="central" font-size="12" font-weight="600" fill="#34C759">V</text>
+
+  <!-- Right-side curly brace: groups Q↔KV, shows 1:1 mapping count -->
+  <!-- Brace path: top hook → vertical → middle point → vertical → bottom hook -->
+  <path d="M 694,108
+           Q 704,108 706,116
+           L 706,164
+           L 712,170
+           L 706,176
+           L 706,222
+           Q 706,230 694,230"
+        fill="none" stroke="#6E6E73" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Brace labels -->
+  <text x="722" y="167" dominant-baseline="central" font-size="12" font-weight="600" fill="#6E6E73">×64 heads</text>
+  <text x="722" y="181" dominant-baseline="central" font-size="10" fill="#6E6E73">1:1 配对</text>
+
+  <!-- ==== Divider ==== -->
+  <line x1="60" y1="256" x2="740" y2="256" stroke="#D2D2D7" stroke-width="1"/>
+
+  <!-- ==== Storage calculation ==== -->
+  <text x="60" y="278" dominant-baseline="central" font-size="13" font-weight="700" fill="#1D1D1F">每个 token 每层 KV Cache 存储（fp16 / bf16，2 bytes / element）</text>
+
+  <!-- Storage detail bg -->
+  <rect x="60" y="292" width="680" height="78" rx="8" fill="#F5F5F7" stroke="#D2D2D7" stroke-width="1"/>
+
+  <!-- K: line -->
+  <text x="80" y="318" dominant-baseline="central" font-size="14" font-weight="600" fill="#FF9F0A" class="mono">K:</text>
+  <text x="105" y="318" dominant-baseline="central" font-size="14" fill="#1D1D1F">
+    <tspan class="mono">64 heads</tspan>
+    <tspan fill="#6E6E73" font-size="13"> × </tspan>
+    <tspan class="mono">128 dim</tspan>
+    <tspan fill="#6E6E73" font-size="13"> × </tspan>
+    <tspan class="mono">2 B</tspan>
+    <tspan fill="#6E6E73" font-size="13"> = </tspan>
+    <tspan class="mono" font-weight="600">16,384 B</tspan>
+    <tspan fill="#6E6E73" font-size="13"> = </tspan>
+    <tspan class="mono" font-weight="700" fill="#FF9F0A">16 KB</tspan>
+  </text>
+
+  <!-- V: line -->
+  <text x="80" y="346" dominant-baseline="central" font-size="14" font-weight="600" fill="#34C759" class="mono">V:</text>
+  <text x="105" y="346" dominant-baseline="central" font-size="14" fill="#1D1D1F">
+    <tspan class="mono">64 heads</tspan>
+    <tspan fill="#6E6E73" font-size="13"> × </tspan>
+    <tspan class="mono">128 dim</tspan>
+    <tspan fill="#6E6E73" font-size="13"> × </tspan>
+    <tspan class="mono">2 B</tspan>
+    <tspan fill="#6E6E73" font-size="13"> = </tspan>
+    <tspan class="mono" font-weight="600">16,384 B</tspan>
+    <tspan fill="#6E6E73" font-size="13"> = </tspan>
+    <tspan class="mono" font-weight="700" fill="#34C759">16 KB</tspan>
+  </text>
+
+  <!-- ==== Total row ==== -->
+  <!-- Formula summary (left) -->
+  <rect x="60" y="386" width="430" height="34" rx="8" fill="#F5F5F7" stroke="#D2D2D7" stroke-width="1"/>
+  <text x="80" y="403" dominant-baseline="central" font-size="13" fill="#1D1D1F">
+    <tspan fill="#FF9F0A" font-weight="600">K</tspan>
+    <tspan> + </tspan>
+    <tspan fill="#34C759" font-weight="600">V</tspan>
+    <tspan> = 16 KB + 16 KB = </tspan>
+    <tspan class="mono" font-weight="700">32 KB / token / layer</tspan>
+  </text>
+
+  <!-- Total badge (right) -->
+  <rect x="510" y="386" width="230" height="34" rx="8" fill="#F5F5F7" stroke="#D2D2D7" stroke-width="1.5"/>
+  <text x="625" y="403" text-anchor="middle" dominant-baseline="central" font-size="15" font-weight="700" fill="#1D1D1F">合计：32 KB / token / layer</text>
+
+  <!-- ==== Footer ==== -->
+  <text x="400" y="462" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#6E6E73">
+    注：LLaMA-2 70B 假设配置（实际使用 GQA，num_kv_heads=8）。数值可由 kv_cache_calc.py 复现。
+  </text>
+</svg>

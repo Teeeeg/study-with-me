@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img"
+    aria-labelledby="title desc">
+    <title id="title">Prompt cache checkpoint</title>
+    <desc id="desc">A stable prompt prefix is cached up to an explicit checkpoint. A matching later
+        request hits the cache; a changed prefix misses from the changed token.</desc>
+    <defs>
+        <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+            <path d="M0,0 L10,5 L0,10 Z" fill="#1D1D1F" />
+        </marker>
+        
+        <style>
+      .ink { fill: #1D1D1F; font-family: Avenir Next, Segoe UI, sans-serif; }
+      .title { font-size: 30px; font-weight: 700; }
+      .label { font-size: 18px; font-weight: 600; }
+      .small { font-size: 15px; }
+      .tiny { font-size: 13px; }
+      .panel { fill: #ffffff; stroke: #d6e0e3; stroke-width: 2; }
+      .stable { fill: #bfe9df; stroke: #16806f; stroke-width: 2; }
+      .dynamic { fill: #ffe0b2; stroke: #c46b16; stroke-width: 2; }
+      .checkpoint { stroke: #d84343; stroke-width: 4; stroke-dasharray: 9 7; }
+      .hit { fill: #167333; }
+      .miss { fill: #FF3B30; }
+    </style>
+    </defs>
+  <rect width="100%" height="100%" fill="#F5F5F7"/>
+
+    <rect width="1200" height="720" fill="#F5F5F7" />
+    <text x="60" y="62" class="ink title">Prompt Cache Checkpoint</text>
+    <text x="60" y="94" class="ink small">An explicit checkpoint marks the end of the reusable
+        prefix.</text>
+
+    <rect x="50" y="125" width="1100" height="215" rx="8" class="panel" />
+    <text x="75" y="162" class="ink label">Request A: create the cache</text>
+    <rect x="75" y="195" width="260" height="70" rx="6" class="stable" />
+    <rect x="335" y="195" width="250" height="70" rx="6" class="stable" />
+    <rect x="585" y="195" width="205" height="70" rx="6" class="stable" />
+    <rect x="790" y="195" width="285" height="70" rx="6" class="dynamic" />
+    <text x="205" y="225" text-anchor="middle" class="ink label">System prompt</text>
+    <text x="205" y="248" text-anchor="middle" class="ink tiny">stable tokens</text>
+    <text x="460" y="225" text-anchor="middle" class="ink label">Tools / examples</text>
+    <text x="460" y="248" text-anchor="middle" class="ink tiny">stable tokens</text>
+    <text x="687" y="225" text-anchor="middle" class="ink label">Knowledge</text>
+    <text x="687" y="248" text-anchor="middle" class="ink tiny">stable tokens</text>
+    <text x="932" y="225" text-anchor="middle" class="ink label">User question A</text>
+    <text x="932" y="248" text-anchor="middle" class="ink tiny">dynamic tokens</text>
+    <line x1="790" y1="178" x2="790" y2="286" class="checkpoint" />
+    <text x="790" y="307" text-anchor="middle" class="ink small" fill="#FF3B30">checkpoint</text>
+    <path d="M1075 230 H1120" stroke="#1D1D1F" stroke-width="2" marker-end="url(#arrow)" />
+    <text x="1090" y="211" text-anchor="middle" class="ink tiny">store</text>
+
+    <rect x="50" y="370" width="1100" height="265" rx="8" class="panel" />
+    <text x="75" y="407" class="ink label">Request B: reuse the prefix</text>
+    <rect x="75" y="440" width="260" height="70" rx="6" class="stable" />
+    <rect x="335" y="440" width="250" height="70" rx="6" class="stable" />
+    <rect x="585" y="440" width="205" height="70" rx="6" class="stable" />
+    <rect x="790" y="440" width="285" height="70" rx="6" class="dynamic" />
+    <text x="205" y="470" text-anchor="middle" class="ink label">System prompt</text>
+    <text x="460" y="470" text-anchor="middle" class="ink label">Tools / examples</text>
+    <text x="687" y="470" text-anchor="middle" class="ink label">Knowledge</text>
+    <text x="932" y="470" text-anchor="middle" class="ink label">User question B</text>
+    <text x="932" y="493" text-anchor="middle" class="ink tiny">only this part changed</text>
+    <line x1="790" y1="423" x2="790" y2="532" class="checkpoint" />
+    <text x="790" y="553" text-anchor="middle" class="ink small">same checkpoint</text>
+    <path d="M520 540 C520 590 650 590 790 540" fill="none" stroke="#167333" stroke-width="4"
+        marker-end="url(#arrow)" />
+    <text x="360" y="603" class="ink label hit">CACHE HIT</text>
+    <text x="505" y="603" class="ink small">reuse KV for the matching prefix</text>
+    <rect x="930" y="565" width="145" height="38" rx="8" fill="#EAF8EE" stroke="#167333"
+        stroke-width="2" />
+    <text x="1002" y="590" text-anchor="middle" class="ink small hit">prefill only B</text>
+
+    <rect x="75" y="665" width="16" height="16" rx="3" class="stable" />
+    <text x="101" y="679" class="ink tiny">stable prefix</text>
+    <rect x="250" y="665" width="16" height="16" rx="3" class="dynamic" />
+    <text x="276" y="679" class="ink tiny">dynamic suffix</text>
+    <line x1="425" y1="673" x2="455" y2="673" class="checkpoint" />
+    <text x="466" y="679" class="ink tiny">cache checkpoint</text>
+    <text x="760" y="679" class="ink tiny">If any token before the line changes, the match stops
+        there.</text>
+</svg>

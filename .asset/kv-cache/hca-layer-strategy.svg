@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="680" viewBox="0 0 1200 680" role="img" aria-labelledby="title desc">
+  <title id="title">Hybrid Compressed Attention layer strategy</title>
+  <desc id="desc">HCA combines layers using c4a for denser global summaries and c128a for sparse long-range summaries. Every layer also retains an exact sliding window of the latest 128 tokens.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#6E6E73"/></marker>
+  </defs>
+  <rect width="100%" height="100%" fill="#F5F5F7"/>
+  <rect width="1200" height="680" fill="#F5F5F7"/>
+  <g font-family="Avenir Next, Segoe UI, sans-serif">
+    <text x="50" y="58" font-size="30" font-weight="700" fill="#1D1D1F">Hybrid Compressed Attention (HCA)</text>
+    <text x="50" y="88" font-size="16" fill="#6E6E73">Different layers preserve different views of history, while every layer keeps recent tokens exact.</text>
+
+    <text x="50" y="137" font-size="13" font-weight="700" fill="#6E6E73">LONG-RANGE MEMORY · COMPRESSED</text>
+    <rect x="50" y="158" width="490" height="170" rx="8" fill="#FFFFFF" stroke="#0071E3" stroke-width="2"/>
+    <rect x="70" y="180" width="108" height="126" rx="8" fill="#EAF3FC" stroke="#0071E3"/>
+    <text x="124" y="216" text-anchor="middle" font-size="26" font-weight="700" fill="#0058B0">30</text>
+    <text x="124" y="241" text-anchor="middle" font-size="14" font-weight="700" fill="#0058B0">c4a layers</text>
+    <text x="124" y="268" text-anchor="middle" font-size="12" fill="#6E6E73">effective 4:1</text>
+    <g fill="#EAF3FC">
+      <rect x="210" y="188" width="36" height="34" rx="5"/><rect x="254" y="188" width="36" height="34" rx="5"/>
+      <rect x="298" y="188" width="36" height="34" rx="5"/><rect x="342" y="188" width="36" height="34" rx="5"/>
+      <rect x="386" y="188" width="36" height="34" rx="5"/><rect x="430" y="188" width="36" height="34" rx="5"/>
+    </g>
+    <text x="338" y="250" text-anchor="middle" font-size="16" font-weight="700" fill="#1D1D1F">More summaries</text>
+    <text x="338" y="276" text-anchor="middle" font-size="14" fill="#6E6E73">better global detail</text>
+    <text x="338" y="298" text-anchor="middle" font-size="14" fill="#6E6E73">higher cache cost</text>
+
+    <rect x="580" y="158" width="570" height="170" rx="8" fill="#FFFFFF" stroke="#FF9F0A" stroke-width="2"/>
+    <rect x="600" y="180" width="108" height="126" rx="8" fill="#FFF4E5" stroke="#FF9F0A"/>
+    <text x="654" y="216" text-anchor="middle" font-size="26" font-weight="700" fill="#8A4B00">31</text>
+    <text x="654" y="241" text-anchor="middle" font-size="14" font-weight="700" fill="#8A4B00">c128a layers</text>
+    <text x="654" y="268" text-anchor="middle" font-size="12" fill="#6E6E73">effective 128:1</text>
+    <g fill="#FFF4E5">
+      <rect x="772" y="188" width="52" height="34" rx="5"/><rect x="840" y="188" width="52" height="34" rx="5"/>
+      <rect x="908" y="188" width="52" height="34" rx="5"/>
+    </g>
+    <text x="954" y="250" text-anchor="middle" font-size="16" font-weight="700" fill="#1D1D1F">Fewer summaries</text>
+    <text x="954" y="276" text-anchor="middle" font-size="14" fill="#6E6E73">much longer reach</text>
+    <text x="954" y="298" text-anchor="middle" font-size="14" fill="#6E6E73">minimal cache cost</text>
+
+    <text x="50" y="376" font-size="13" font-weight="700" fill="#6E6E73">LOCAL MEMORY · EXACT IN EVERY LAYER</text>
+    <rect x="50" y="396" width="1100" height="116" rx="8" fill="#FFFFFF" stroke="#34C759" stroke-width="2"/>
+    <text x="82" y="428" font-size="17" font-weight="700" fill="#167333">Latest 128 tokens · sliding window</text>
+    <g fill="#EAF8EE" stroke="#34C759">
+      <rect x="82" y="450" width="58" height="38" rx="6"/><rect x="150" y="450" width="58" height="38" rx="6"/>
+      <rect x="218" y="450" width="58" height="38" rx="6"/><rect x="286" y="450" width="58" height="38" rx="6"/>
+      <rect x="354" y="450" width="58" height="38" rx="6"/><rect x="422" y="450" width="58" height="38" rx="6"/>
+      <rect x="490" y="450" width="58" height="38" rx="6"/>
+    </g>
+    <text x="571" y="474" font-size="18" fill="#6E6E73">…</text>
+    <rect x="610" y="450" width="58" height="38" rx="6" fill="#34C759"/>
+    <text x="639" y="474" text-anchor="middle" font-size="12" font-weight="700" fill="#FFFFFF">now</text>
+    <text x="718" y="458" font-size="15" font-weight="700" fill="#1D1D1F">No compression</text>
+    <text x="718" y="483" font-size="14" fill="#6E6E73">preserves names, syntax and nearby details</text>
+
+    <path d="M330 328 V354 H430 V380" fill="none" stroke="#6E6E73" stroke-width="2" marker-end="url(#arrow)"/>
+    <path d="M865 328 V354 H770 V380" fill="none" stroke="#6E6E73" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <rect x="50" y="548" width="1100" height="82" rx="8" fill="#EAF8EE" stroke="#34C759"/>
+    <text x="600" y="578" text-anchor="middle" font-size="20" font-weight="700" fill="#167333">Each query combines two views</text>
+    <text x="600" y="607" text-anchor="middle" font-size="16" fill="#1D1D1F">compressed global history  +  exact recent context</text>
+    <text x="600" y="657" text-anchor="middle" font-size="13" fill="#6E6E73">HCA balances detail, long-range coverage and KV Cache size across 61 layers.</text>
+  </g>
+</svg>

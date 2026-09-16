@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" role="img" aria-labelledby="title desc">
+  <title id="title">Multi-Head Latent Attention mechanism</title>
+  <desc id="desc">A token hidden state is compressed into a shared KV latent while a decoupled RoPE key is stored separately. During decoding, content keys and values are reconstructed per head and the RoPE key is broadcast to all heads.</desc>
+  <defs>
+    <marker id="arrow-gray" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#6E6E73"/></marker>
+    <marker id="arrow-blue" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#0071E3"/></marker>
+    <marker id="arrow-green" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#34C759"/></marker>
+    <marker id="arrow-orange" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#FF9F0A"/></marker>
+  </defs>
+  <rect width="100%" height="100%" fill="#F5F5F7"/>
+  <rect width="1200" height="700" fill="#F5F5F7"/>
+  <g font-family="Avenir Next, Segoe UI, sans-serif">
+    <text x="50" y="58" font-size="30" font-weight="700" fill="#1D1D1F">Multi-Head Latent Attention (MLA)</text>
+    <text x="50" y="88" font-size="16" fill="#6E6E73">Store a compact state. Reconstruct per-head K/V only when attention runs.</text>
+
+    <text x="50" y="142" font-size="13" font-weight="700" fill="#6E6E73">1 · COMPRESS</text>
+    <rect x="50" y="166" width="210" height="74" rx="8" fill="#FFFFFF" stroke="#C7C7CC"/>
+    <text x="155" y="197" text-anchor="middle" font-size="16" font-weight="700" fill="#1D1D1F">Token hidden state</text>
+    <text x="155" y="220" text-anchor="middle" font-size="14" fill="#6E6E73">h<tspan baseline-shift="sub" font-size="10">t</tspan> · model width</text>
+
+    <rect x="320" y="166" width="170" height="74" rx="8" fill="#EAF3FC" stroke="#0071E3"/>
+    <text x="405" y="197" text-anchor="middle" font-size="16" font-weight="700" fill="#0058B0">Down-project</text>
+    <text x="405" y="220" text-anchor="middle" font-size="14" fill="#6E6E73">W<tspan baseline-shift="super" font-size="10">DKV</tspan></text>
+    <rect x="320" y="270" width="170" height="74" rx="8" fill="#FFF4E5" stroke="#FF9F0A"/>
+    <text x="405" y="301" text-anchor="middle" font-size="16" font-weight="700" fill="#8A4B00">RoPE projection</text>
+    <text x="405" y="324" text-anchor="middle" font-size="14" fill="#6E6E73">position path</text>
+    <path d="M260 203 H304" fill="none" stroke="#6E6E73" stroke-width="2" marker-end="url(#arrow-gray)"/>
+    <path d="M260 218 H286 V307 H304" fill="none" stroke="#6E6E73" stroke-width="2" marker-end="url(#arrow-gray)"/>
+
+    <text x="550" y="142" font-size="13" font-weight="700" fill="#6E6E73">2 · STORE PER TOKEN</text>
+    <rect x="550" y="158" width="270" height="196" rx="8" fill="#FFFFFF" stroke="#34C759" stroke-width="2"/>
+    <text x="685" y="184" text-anchor="middle" font-size="13" font-weight="700" fill="#1D1D1F">KV CACHE</text>
+    <rect x="570" y="204" width="230" height="58" rx="8" fill="#EAF3FC" stroke="#0071E3"/>
+    <text x="685" y="228" text-anchor="middle" font-size="16" font-weight="700" fill="#0058B0">KV latent</text>
+    <text x="685" y="249" text-anchor="middle" font-size="13" fill="#6E6E73">512 dims · shared by K and V</text>
+    <rect x="570" y="278" width="230" height="58" rx="8" fill="#FFF4E5" stroke="#FF9F0A"/>
+    <text x="685" y="302" text-anchor="middle" font-size="15" font-weight="700" fill="#8A4B00">Decoupled RoPE key</text>
+    <text x="685" y="323" text-anchor="middle" font-size="13" fill="#6E6E73">64 dims · shared by all heads</text>
+    <path d="M490 203 H554" fill="none" stroke="#0071E3" stroke-width="2" marker-end="url(#arrow-blue)"/>
+    <path d="M490 307 H554" fill="none" stroke="#FF9F0A" stroke-width="2" marker-end="url(#arrow-orange)"/>
+
+    <text x="880" y="142" font-size="13" font-weight="700" fill="#6E6E73">3 · RECONSTRUCT ON DECODE</text>
+    <rect x="900" y="166" width="240" height="58" rx="8" fill="#EAF3FC" stroke="#0071E3" stroke-dasharray="5 4"/>
+    <text x="1020" y="190" text-anchor="middle" font-size="15" font-weight="700" fill="#0058B0">Content K per head</text>
+    <text x="1020" y="211" text-anchor="middle" font-size="13" fill="#6E6E73">W<tspan baseline-shift="super" font-size="9">UK</tspan> · reconstructed</text>
+    <rect x="900" y="242" width="240" height="58" rx="8" fill="#EAF8EE" stroke="#34C759" stroke-dasharray="5 4"/>
+    <text x="1020" y="266" text-anchor="middle" font-size="15" font-weight="700" fill="#167333">Value per head</text>
+    <text x="1020" y="287" text-anchor="middle" font-size="13" fill="#6E6E73">W<tspan baseline-shift="super" font-size="9">UV</tspan> · reconstructed</text>
+    <rect x="900" y="318" width="240" height="58" rx="8" fill="#FFF4E5" stroke="#FF9F0A" stroke-dasharray="5 4"/>
+    <text x="1020" y="342" text-anchor="middle" font-size="14" font-weight="700" fill="#8A4B00">RoPE key for all heads</text>
+    <text x="1020" y="363" text-anchor="middle" font-size="12" fill="#6E6E73">broadcast · not duplicated in cache</text>
+    <path d="M800 225 H852 V195 H884" fill="none" stroke="#0071E3" stroke-width="2" marker-end="url(#arrow-blue)"/>
+    <path d="M800 242 H852 V271 H884" fill="none" stroke="#34C759" stroke-width="2" marker-end="url(#arrow-green)"/>
+    <path d="M800 307 H852 V347 H884" fill="none" stroke="#FF9F0A" stroke-width="2" marker-end="url(#arrow-orange)"/>
+
+    <text x="50" y="442" font-size="13" font-weight="700" fill="#6E6E73">WHAT IS SAVED?</text>
+    <rect x="50" y="462" width="300" height="118" rx="8" fill="#FFFFFF" stroke="#C7C7CC"/>
+    <text x="200" y="493" text-anchor="middle" font-size="16" font-weight="700" fill="#1D1D1F">Traditional MHA</text>
+    <text x="200" y="519" text-anchor="middle" font-size="14" fill="#6E6E73">full K + full V</text>
+    <text x="200" y="551" text-anchor="middle" font-size="20" font-weight="700" fill="#1D1D1F">64 KB / token / layer</text>
+    <rect x="390" y="462" width="300" height="118" rx="8" fill="#FFFFFF" stroke="#0071E3" stroke-width="2"/>
+    <text x="540" y="493" text-anchor="middle" font-size="16" font-weight="700" fill="#1D1D1F">MLA</text>
+    <text x="540" y="519" text-anchor="middle" font-size="14" fill="#6E6E73">latent + shared RoPE key</text>
+    <text x="540" y="551" text-anchor="middle" font-size="20" font-weight="700" fill="#0058B0">1.13 KB / token / layer</text>
+    <rect x="730" y="462" width="410" height="118" rx="8" fill="#EAF8EE" stroke="#34C759"/>
+    <text x="935" y="515" text-anchor="middle" font-size="24" font-weight="700" fill="#167333">≈ 57× smaller</text>
+    <text x="935" y="544" text-anchor="middle" font-size="14" fill="#167333">same example · BF16</text>
+    <text x="50" y="630" font-size="14" fill="#6E6E73">DeepSeek-V3 example: 128 query heads · 512-dim KV latent · 64-dim RoPE key · BF16</text>
+  </g>
+</svg>

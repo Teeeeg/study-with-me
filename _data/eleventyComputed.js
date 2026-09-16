@@ -14,7 +14,7 @@ export default {
 
     const stem = data.page.filePathStem.replace(/\.zh-CN$/, "");
     const base = stem === "/index" ? "" : stem;
-    const prefix = data.lang === "zh" ? "/zh" : "";
+    const prefix = data.lang === "en" ? "/en" : "";
     return `${prefix}${base}/index.html`;
   },
 };

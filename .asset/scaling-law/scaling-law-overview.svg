@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" role="img"
+    aria-labelledby="title desc"
+    content="&lt;mxfile host=&quot;app.diagrams.net&quot; modified=&quot;2026-09-16T00:00:00.000Z&quot; agent=&quot;GitHub Copilot&quot; version=&quot;24.7.17&quot; type=&quot;device&quot; compressed=&quot;false&quot;&gt;&lt;diagram id=&quot;scaling-overview&quot; name=&quot;Page-1&quot;&gt;&lt;mxGraphModel dx=&quot;1200&quot; dy=&quot;700&quot; grid=&quot;1&quot; gridSize=&quot;10&quot; page=&quot;1&quot; pageWidth=&quot;1200&quot; pageHeight=&quot;700&quot;&gt;&lt;root&gt;&lt;mxCell id=&quot;0&quot;/&gt;&lt;mxCell id=&quot;1&quot; parent=&quot;0&quot;/&gt;&lt;mxCell id=&quot;2&quot; value=&quot;Scaling Laws at a Glance&quot; style=&quot;text;html=1;fontFamily=Helvetica;fontSize=30;fontStyle=1;fontColor=#1D1D1F;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;&lt;mxGeometry x=&quot;50&quot; y=&quot;25&quot; width=&quot;700&quot; height=&quot;45&quot; as=&quot;geometry&quot;/&gt;&lt;/mxCell&gt;&lt;mxCell id=&quot;3&quot; value=&quot;PARAMETERS&quot; style=&quot;rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#1D1D1F;strokeColor=none;fontColor=#FFFFFF;fontSize=18;fontStyle=1;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;&lt;mxGeometry x=&quot;95&quot; y=&quot;165&quot; width=&quot;180&quot; height=&quot;70&quot; as=&quot;geometry&quot;/&gt;&lt;/mxCell&gt;&lt;mxCell id=&quot;4&quot; value=&quot;DATA&quot; style=&quot;rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#1D1D1F;strokeColor=none;fontColor=#FFFFFF;fontSize=18;fontStyle=1;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;&lt;mxGeometry x=&quot;395&quot; y=&quot;165&quot; width=&quot;180&quot; height=&quot;70&quot; as=&quot;geometry&quot;/&gt;&lt;/mxCell&gt;&lt;mxCell id=&quot;5&quot; value=&quot;COMPUTE BUDGET&quot; style=&quot;rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#E8F2FF;strokeColor=#0071E3;fontColor=#0071E3;fontSize=18;fontStyle=1;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;&lt;mxGeometry x=&quot;245&quot; y=&quot;350&quot; width=&quot;180&quot; height=&quot;70&quot; as=&quot;geometry&quot;/&gt;&lt;/mxCell&gt;&lt;mxCell id=&quot;6&quot; value=&quot;DIMINISHING RETURNS&quot; style=&quot;text;html=1;fontFamily=Helvetica;fontSize=18;fontStyle=1;fontColor=#1D1D1F;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;&lt;mxGeometry x=&quot;700&quot; y=&quot;135&quot; width=&quot;250&quot; height=&quot;30&quot; as=&quot;geometry&quot;/&gt;&lt;/mxCell&gt;&lt;mxCell id=&quot;7&quot; value=&quot;More scale → lower loss&quot; style=&quot;rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#FFFFFF;strokeColor=#D2D2D7;fontColor=#1D1D1F;fontSize=20;fontStyle=1;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;&lt;mxGeometry x=&quot;690&quot; y=&quot;180&quot; width=&quot;390&quot; height=&quot;70&quot; as=&quot;geometry&quot;/&gt;&lt;/mxCell&gt;&lt;mxCell id=&quot;8&quot; value=&quot;Each additional gain costs more&quot; style=&quot;text;html=1;fontFamily=Helvetica;fontSize=16;fontColor=#6E6E73;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;&lt;mxGeometry x=&quot;760&quot; y=&quot;470&quot; width=&quot;280&quot; height=&quot;30&quot; as=&quot;geometry&quot;/&gt;&lt;/mxCell&gt;&lt;mxCell id=&quot;9&quot; value=&quot;Fixed compute means choosing an allocation, not maximizing one variable.&quot; style=&quot;rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#FFFFFF;strokeColor=#D2D2D7;fontColor=#1D1D1F;fontSize=17;fontStyle=1;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;&lt;mxGeometry x=&quot;150&quot; y=&quot;570&quot; width=&quot;900&quot; height=&quot;58&quot; as=&quot;geometry&quot;/&gt;&lt;/mxCell&gt;&lt;/root&gt;&lt;/mxGraphModel&gt;&lt;/diagram&gt;&lt;/mxfile&gt;">
+    <title id="title">Scaling Laws at a glance</title>
+    <desc id="desc">Parameters and data jointly determine training compute, while validation loss
+        falls as a power law with diminishing returns.</desc>
+    <rect width="1200" height="700" fill="#F5F5F7" />
+    <g
+        font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif">
+        <text x="50" y="58" fill="#1D1D1F" font-size="32" font-weight="600">Scaling Laws at a Glance</text>
+        <text x="50" y="88" fill="#6E6E73" font-size="16">Model size, training data and compute form
+            one constrained system</text>
+
+        <rect x="50" y="120" width="570" height="410" rx="12" fill="#FFFFFF" stroke="#D2D2D7" />
+        <text x="80" y="158" fill="#1D1D1F" font-size="18" font-weight="600">THE TRAINING BUDGET</text>
+        <line x1="185" y1="210" x2="485" y2="210" stroke="#86868B" stroke-width="2" />
+        <line x1="185" y1="210" x2="335" y2="385" stroke="#86868B" stroke-width="2" />
+        <line x1="485" y1="210" x2="335" y2="385" stroke="#86868B" stroke-width="2" />
+        <rect x="95" y="175" width="180" height="70" rx="12" fill="#1D1D1F" />
+        <text x="185" y="204" fill="#FFFFFF" font-size="17" font-weight="600" text-anchor="middle">
+            PARAMETERS</text>
+        <text x="185" y="228" fill="#AEAEB2" font-size="15" text-anchor="middle">model capacity</text>
+        <rect x="395" y="175" width="180" height="70" rx="12" fill="#1D1D1F" />
+        <text x="485" y="204" fill="#FFFFFF" font-size="17" font-weight="600" text-anchor="middle">
+            DATA</text>
+        <text x="485" y="228" fill="#AEAEB2" font-size="15" text-anchor="middle">training tokens</text>
+        <rect x="245" y="350" width="180" height="70" rx="12" fill="#E8F2FF" stroke="#0071E3"
+            stroke-width="2" />
+        <text x="335" y="379" fill="#0071E3" font-size="17" font-weight="600" text-anchor="middle">
+            COMPUTE</text>
+        <text x="335" y="404" fill="#0071E3" font-size="16" text-anchor="middle">fixed budget</text>
+        <text x="335" y="472" fill="#6E6E73" font-size="15" text-anchor="middle">More of one means
+            less of the other</text>
+
+        <rect x="650" y="120" width="500" height="410" rx="12" fill="#FFFFFF" stroke="#D2D2D7" />
+        <text x="680" y="158" fill="#1D1D1F" font-size="18" font-weight="600">DIMINISHING RETURNS</text>
+        <rect x="690" y="180" width="390" height="58" rx="10" fill="#F5F5F7" stroke="#E5E5EA" />
+        <text x="885" y="217" fill="#1D1D1F" font-size="20" font-weight="600" text-anchor="middle">More
+            scale → lower loss</text>
+        <line x1="720" y1="450" x2="1080" y2="450" stroke="#86868B" stroke-width="2" />
+        <line x1="720" y1="450" x2="720" y2="275" stroke="#86868B" stroke-width="2" />
+        <path d="M735 290 C790 350 850 390 930 414 C985 430 1030 437 1065 440" fill="none"
+            stroke="#0071E3" stroke-width="5" stroke-linecap="round" />
+        <line x1="735" y1="440" x2="1065" y2="440" stroke="#B8D8FA" stroke-width="2"
+            stroke-dasharray="7 6" />
+        <text x="697" y="286" fill="#6E6E73" font-size="14" text-anchor="end">Loss</text>
+        <text x="1080" y="478" fill="#6E6E73" font-size="14" text-anchor="end">Scale x</text>
+        <text x="900" y="495" fill="#6E6E73" font-size="15" text-anchor="middle">Each additional
+            gain costs more</text>
+
+        <rect x="150" y="570" width="900" height="58" rx="12" fill="#FFFFFF" stroke="#D2D2D7" />
+        <rect x="150" y="570" width="5" height="58" rx="2" fill="#0071E3" />
+        <text x="600" y="606" fill="#1D1D1F" font-size="17" font-weight="600" text-anchor="middle">Fixed
+            compute means choosing an allocation, not maximizing one variable.</text>
+    </g>
+</svg>

@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620" role="img"
+    aria-labelledby="title desc">
+    <title id="title">Radix Tree 路径压缩与节点分裂</title>
+    <desc id="desc">展示 hello world 与 hello vllm 两个 token 序列如何在公共前缀 hello 空格处分裂。</desc>
+    <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+            orient="auto">
+            <path d="M0 0 L10 5 L0 10 Z" fill="#6E6E73" />
+        </marker>
+        <style>
+      text { font-family: Avenir Next, Segoe UI, sans-serif; letter-spacing: 0; }
+      .title { font-size: 30px; font-weight: 700; fill: #172033; }
+      .subtitle { font-size: 16px; fill: #526070; }
+      .panel-title { font-size: 20px; font-weight: 700; fill: #24324a; }
+      .node-text { font-size: 17px; font-weight: 700; fill: #24324a; }
+      .body { font-size: 14px; fill: #475569; }
+      .panel { fill: #fff; stroke: #D2D2D7; stroke-width: 1.5; }
+      .root { fill: #eef2f7; stroke: #94a3b8; stroke-width: 1.5; }
+      .shared { fill: #dbeafe; stroke: #4f8fce; stroke-width: 2; }
+      .old { fill: #FFF4E5; stroke: #d2a532; stroke-width: 1.5; }
+      .new { fill: #dcfce7; stroke: #43a56c; stroke-width: 1.5; }
+      .edge { fill: none; stroke: #6E6E73; stroke-width: 2; }
+      .arrow { fill: none; stroke: #6E6E73; stroke-width: 2.5; marker-end: url(#arrow); }
+    </style>
+    </defs>
+  <rect width="100%" height="100%" fill="#F5F5F7"/>
+    <rect width="1200" height="620" fill="#F5F5F7" />
+    <text x="600" y="48" text-anchor="middle" class="title">Radix Tree：在最长公共前缀处分裂</text>
+    <text x="600" y="78" text-anchor="middle" class="subtitle">节点存储连续 token 片段；只有出现分支时，才拆成公共前缀与两个后缀</text>
+
+    <rect x="52" y="112" width="445" height="420" rx="8" class="panel" />
+    <text x="274" y="150" text-anchor="middle" class="panel-title">插入前</text>
+    <rect x="224" y="178" width="100" height="44" rx="7" class="root" />
+    <text x="274" y="206" text-anchor="middle" class="node-text">root</text>
+    <path d="M274 222 V278" class="edge" />
+    <rect x="155" y="278" width="238" height="58" rx="7" class="old" />
+    <text x="274" y="314" text-anchor="middle" class="node-text">“hello world”</text>
+    <rect x="115" y="383" width="318" height="86" rx="7" fill="#FFF4E5" stroke="#FF9F0A" />
+    <text x="274" y="416" text-anchor="middle" class="body">插入新序列：“hello vllm”</text>
+    <text x="274" y="444" text-anchor="middle" class="body">逐 token 比较，在 w / v 处首次不同</text>
+
+    <path d="M515 322 H670" class="arrow" />
+    <text x="592" y="302" text-anchor="middle" class="body">找到 LCP</text>
+    <text x="592" y="346" text-anchor="middle" class="node-text">“hello ”</text>
+
+    <rect x="700" y="112" width="448" height="420" rx="8" class="panel" />
+    <text x="924" y="150" text-anchor="middle" class="panel-title">分裂后</text>
+    <rect x="874" y="178" width="100" height="44" rx="7" class="root" />
+    <text x="924" y="206" text-anchor="middle" class="node-text">root</text>
+    <path d="M924 222 V262" class="edge" />
+    <rect x="829" y="262" width="190" height="54" rx="7" class="shared" />
+    <text x="924" y="295" text-anchor="middle" class="node-text">“hello ”</text>
+    <path d="M924 316 V345 M924 345 L818 382 M924 345 L1030 382" class="edge" />
+    <rect x="748" y="382" width="140" height="54" rx="7" class="old" />
+    <text x="818" y="415" text-anchor="middle" class="node-text">“world”</text>
+    <rect x="960" y="382" width="140" height="54" rx="7" class="new" />
+    <text x="1030" y="415" text-anchor="middle" class="node-text">“vllm”</text>
+    <text x="924" y="484" text-anchor="middle" class="body">蓝色公共前缀及其 KV Cache 只保存一份</text>
+
+    <g transform="translate(190 566)">
+        <rect x="0" y="-16" width="22" height="22" rx="4" class="shared" />
+        <text x="32" y="1" class="body">共享前缀</text>
+        <rect x="160" y="-16" width="22" height="22" rx="4" class="old" />
+        <text x="192" y="1" class="body">已有后缀</text>
+        <rect x="325" y="-16" width="22" height="22" rx="4" class="new" />
+        <text x="357" y="1" class="body">新增后缀</text>
+    </g>
+</svg>
