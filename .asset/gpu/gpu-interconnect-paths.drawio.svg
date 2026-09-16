@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" role="img" aria-labelledby="title desc" content="&lt;mxfile host=&quot;app.diagrams.net&quot; modified=&quot;2026-09-16T00:00:00.000Z&quot; agent=&quot;GitHub Copilot&quot; version=&quot;24.7.17&quot; type=&quot;device&quot; compressed=&quot;false&quot;&gt;&lt;diagram id=&quot;interconnect-paths&quot; name=&quot;Page-1&quot;&gt;&lt;mxGraphModel dx=&quot;1200&quot; dy=&quot;700&quot; grid=&quot;1&quot; gridSize=&quot;10&quot; page=&quot;1&quot; pageWidth=&quot;1200&quot; pageHeight=&quot;700&quot;&gt;&lt;root&gt;&lt;mxCell id=&quot;0&quot;/&gt;&lt;mxCell id=&quot;1&quot; parent=&quot;0&quot;/&gt;&lt;mxCell id=&quot;2&quot; value=&quot;GPU-to-GPU Communication Paths&quot; style=&quot;text;html=1;fontFamily=Helvetica;fontSize=30;fontStyle=1;fontColor=#1D1D1F;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;&lt;mxGeometry x=&quot;50&quot; y=&quot;25&quot; width=&quot;700&quot; height=&quot;45&quot; as=&quot;geometry&quot;/&gt;&lt;/mxCell&gt;&lt;mxCell id=&quot;3&quot; value=&quot;FAST PATH — NVLink / NVSwitch&quot; style=&quot;swimlane;rounded=1;arcSize=8;html=1;fontFamily=Helvetica;fillColor=#FFFFFF;swimlaneFillColor=#FAFAFC;strokeColor=#D2D2D7;fontSize=18;fontStyle=1;fontColor=#1D1D1F;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;&lt;mxGeometry x=&quot;50&quot; y=&quot;115&quot; width=&quot;520&quot; height=&quot;450&quot; as=&quot;geometry&quot;/&gt;&lt;/mxCell&gt;&lt;mxCell id=&quot;4&quot; value=&quot;FALLBACK — Host-staged PCIe&quot; style=&quot;swimlane;rounded=1;arcSize=8;html=1;fontFamily=Helvetica;fillColor=#FFFFFF;swimlaneFillColor=#FAFAFC;strokeColor=#D2D2D7;fontSize=18;fontStyle=1;fontColor=#1D1D1F;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;&lt;mxGeometry x=&quot;630&quot; y=&quot;115&quot; width=&quot;520&quot; height=&quot;450&quot; as=&quot;geometry&quot;/&gt;&lt;/mxCell&gt;&lt;mxCell id=&quot;5&quot; value=&quot;GPU 0&quot; style=&quot;rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#1D1D1F;strokeColor=none;fontColor=#FFFFFF;fontSize=20;fontStyle=1;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;&lt;mxGeometry x=&quot;90&quot; y=&quot;270&quot; width=&quot;130&quot; height=&quot;90&quot; as=&quot;geometry&quot;/&gt;&lt;/mxCell&gt;&lt;mxCell id=&quot;6&quot; value=&quot;NVSwitch&quot; style=&quot;rhombus;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#E8F2FF;strokeColor=#0071E3;fontColor=#0071E3;fontSize=17;fontStyle=1;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;&lt;mxGeometry x=&quot;260&quot; y=&quot;260&quot; width=&quot;110&quot; height=&quot;110&quot; as=&quot;geometry&quot;/&gt;&lt;/mxCell&gt;&lt;mxCell id=&quot;7&quot; value=&quot;GPU 1&quot; style=&quot;rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#1D1D1F;strokeColor=none;fontColor=#FFFFFF;fontSize=20;fontStyle=1;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;&lt;mxGeometry x=&quot;410&quot; y=&quot;270&quot; width=&quot;130&quot; height=&quot;90&quot; as=&quot;geometry&quot;/&gt;&lt;/mxCell&gt;&lt;mxCell id=&quot;8&quot; value=&quot;GPU 0&quot; style=&quot;rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#1D1D1F;strokeColor=none;fontColor=#FFFFFF;fontSize=20;fontStyle=1;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;&lt;mxGeometry x=&quot;660&quot; y=&quot;215&quot; width=&quot;130&quot; height=&quot;80&quot; as=&quot;geometry&quot;/&gt;&lt;/mxCell&gt;&lt;mxCell id=&quot;9&quot; value=&quot;CPU Memory&quot; style=&quot;shape=cylinder3;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#F5F5F7;strokeColor=#86868B;fontColor=#1D1D1F;fontSize=18;fontStyle=1;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;&lt;mxGeometry x=&quot;825&quot; y=&quot;323&quot; width=&quot;130&quot; height=&quot;90&quot; as=&quot;geometry&quot;/&gt;&lt;/mxCell&gt;&lt;mxCell id=&quot;10&quot; value=&quot;GPU 1&quot; style=&quot;rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#1D1D1F;strokeColor=none;fontColor=#FFFFFF;fontSize=20;fontStyle=1;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;&lt;mxGeometry x=&quot;990&quot; y=&quot;445&quot; width=&quot;130&quot; height=&quot;80&quot; as=&quot;geometry&quot;/&gt;&lt;/mxCell&gt;&lt;/root&gt;&lt;/mxGraphModel&gt;&lt;/diagram&gt;&lt;/mxfile&gt;">
+  <title id="title">GPU-to-GPU communication paths</title>
+  <desc id="desc">Comparison of a direct NVLink and NVSwitch path with a slower host-staged PCIe fallback through CPU memory.</desc>
+  <rect width="1200" height="700" fill="#F5F5F7"/>
+  <g font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif">
+    <text x="50" y="58" fill="#1D1D1F" font-size="32" font-weight="600">GPU-to-GPU Communication Paths</text>
+    <text x="50" y="88" fill="#6E6E73" font-size="16">The selected physical path sets the communication ceiling</text>
+
+    <rect x="50" y="115" width="520" height="450" rx="12" fill="#FFFFFF" stroke="#D2D2D7"/>
+    <rect x="50" y="115" width="520" height="62" rx="12" fill="#FAFAFC" stroke="#D2D2D7"/>
+    <text x="310" y="153" fill="#1D1D1F" font-size="20" font-weight="600" text-anchor="middle">FAST PATH — NVLink / NVSwitch</text>
+    <rect x="90" y="270" width="130" height="90" rx="12" fill="#1D1D1F"/>
+    <text x="155" y="323" fill="#FFFFFF" font-size="21" font-weight="600" text-anchor="middle">GPU 0</text>
+    <polygon points="315,255 380,315 315,375 250,315" fill="#E8F2FF" stroke="#0071E3" stroke-width="2"/>
+    <text x="315" y="311" fill="#0071E3" font-size="16" font-weight="600" text-anchor="middle">NV</text>
+    <text x="315" y="331" fill="#0071E3" font-size="14" text-anchor="middle">Switch</text>
+    <rect x="410" y="270" width="130" height="90" rx="12" fill="#1D1D1F"/>
+    <text x="475" y="323" fill="#FFFFFF" font-size="21" font-weight="600" text-anchor="middle">GPU 1</text>
+    <line x1="220" y1="315" x2="250" y2="315" stroke="#0071E3" stroke-width="7"/>
+    <line x1="380" y1="315" x2="410" y2="315" stroke="#0071E3" stroke-width="7"/>
+    <text x="315" y="418" fill="#1D1D1F" font-size="17" font-weight="600" text-anchor="middle">Direct GPU memory path</text>
+    <text x="315" y="447" fill="#6E6E73" font-size="15" text-anchor="middle">High bandwidth • low latency • no CPU copy</text>
+    <rect x="112" y="482" width="396" height="48" rx="10" fill="#F5F5F7" stroke="#E5E5EA"/>
+    <text x="310" y="512" fill="#0071E3" font-size="15" font-weight="600" text-anchor="middle">Preferred for tensor-parallel collectives</text>
+
+    <rect x="630" y="115" width="520" height="450" rx="12" fill="#FFFFFF" stroke="#D2D2D7"/>
+    <rect x="630" y="115" width="520" height="62" rx="12" fill="#FAFAFC" stroke="#D2D2D7"/>
+    <text x="890" y="153" fill="#1D1D1F" font-size="20" font-weight="600" text-anchor="middle">FALLBACK — Host-staged PCIe</text>
+    <rect x="665" y="215" width="130" height="80" rx="12" fill="#1D1D1F"/>
+    <text x="730" y="263" fill="#FFFFFF" font-size="21" font-weight="600" text-anchor="middle">GPU 0</text>
+    <ellipse cx="890" cy="345" rx="72" ry="22" fill="#F5F5F7" stroke="#86868B"/>
+    <rect x="818" y="345" width="144" height="65" fill="#F5F5F7" stroke="#86868B"/>
+    <ellipse cx="890" cy="410" rx="72" ry="22" fill="#F5F5F7" stroke="#86868B"/>
+    <text x="890" y="373" fill="#1D1D1F" font-size="16" font-weight="600" text-anchor="middle">CPU</text>
+    <text x="890" y="393" fill="#6E6E73" font-size="14" text-anchor="middle">Memory</text>
+    <rect x="990" y="445" width="130" height="80" rx="12" fill="#1D1D1F"/>
+    <text x="1055" y="493" fill="#FFFFFF" font-size="21" font-weight="600" text-anchor="middle">GPU 1</text>
+    <path d="M795 270 C825 280 830 315 842 329" fill="none" stroke="#86868B" stroke-width="5"/>
+    <polygon points="847,337 833,329 846,322" fill="#86868B"/>
+    <path d="M956 404 C988 417 1005 425 1020 444" fill="none" stroke="#86868B" stroke-width="5"/>
+    <polygon points="1026,451 1011,445 1023,437" fill="#86868B"/>
+    <text x="822" y="254" fill="#6E6E73" font-size="13" font-weight="600">PCIe copy 1</text>
+    <text x="1000" y="408" fill="#6E6E73" font-size="13" font-weight="600">PCIe copy 2</text>
+    <text x="890" y="550" fill="#6E6E73" font-size="14" font-weight="600" text-anchor="middle">Extra copies add latency and consume bandwidth</text>
+
+    <rect x="150" y="605" width="900" height="55" rx="12" fill="#FFFFFF" stroke="#D2D2D7"/>
+    <text x="600" y="638" fill="#1D1D1F" font-size="17" font-weight="600" text-anchor="middle">Always verify the actual NCCL path — GPU numbering does not describe topology.</text>
+  </g>
+</svg>

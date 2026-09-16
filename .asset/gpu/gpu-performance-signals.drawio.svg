@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="680" viewBox="0 0 1200 680" role="img" aria-labelledby="title desc" content="&lt;mxfile host=&quot;app.diagrams.net&quot; modified=&quot;2026-09-16T00:00:00.000Z&quot; agent=&quot;GitHub Copilot&quot; version=&quot;24.7.17&quot; type=&quot;device&quot; compressed=&quot;false&quot;&gt;&lt;diagram id=&quot;gpu-signals&quot; name=&quot;Page-1&quot;&gt;&lt;mxGraphModel dx=&quot;1200&quot; dy=&quot;680&quot; grid=&quot;1&quot; gridSize=&quot;10&quot; page=&quot;1&quot; pageWidth=&quot;1200&quot; pageHeight=&quot;680&quot;&gt;&lt;root&gt;&lt;mxCell id=&quot;0&quot;/&gt;&lt;mxCell id=&quot;1&quot; parent=&quot;0&quot;/&gt;&lt;mxCell id=&quot;2&quot; value=&quot;Reading GPU Performance Signals&quot; style=&quot;text;html=1;fontFamily=Helvetica;fontSize=30;fontStyle=1;fontColor=#1D1D1F;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;&lt;mxGeometry x=&quot;50&quot; y=&quot;25&quot; width=&quot;700&quot; height=&quot;45&quot; as=&quot;geometry&quot;/&gt;&lt;/mxCell&gt;&lt;mxCell id=&quot;3&quot; value=&quot;1  ACTIVITY — Is any kernel running?&quot; style=&quot;rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#FFFFFF;strokeColor=#D2D2D7;fontSize=18;fontStyle=1;fontColor=#1D1D1F;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;&lt;mxGeometry x=&quot;70&quot; y=&quot;125&quot; width=&quot;300&quot; height=&quot;300&quot; as=&quot;geometry&quot;/&gt;&lt;/mxCell&gt;&lt;mxCell id=&quot;4&quot; value=&quot;2  EXECUTION — Which resources are busy?&quot; style=&quot;rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#FFFFFF;strokeColor=#D2D2D7;fontSize=18;fontStyle=1;fontColor=#1D1D1F;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;&lt;mxGeometry x=&quot;450&quot; y=&quot;125&quot; width=&quot;300&quot; height=&quot;300&quot; as=&quot;geometry&quot;/&gt;&lt;/mxCell&gt;&lt;mxCell id=&quot;5&quot; value=&quot;3  OUTCOME — Is useful work fast?&quot; style=&quot;rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#FFFFFF;strokeColor=#D2D2D7;fontSize=18;fontStyle=1;fontColor=#1D1D1F;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;&lt;mxGeometry x=&quot;830&quot; y=&quot;125&quot; width=&quot;300&quot; height=&quot;440&quot; as=&quot;geometry&quot;/&gt;&lt;/mxCell&gt;&lt;mxCell id=&quot;6&quot; value=&quot;GPU-Util = 100% does not prove peak compute.&quot; style=&quot;rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#FFFFFF;strokeColor=#0071E3;fontSize=17;fontStyle=1;fontColor=#1D1D1F;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;&lt;mxGeometry x=&quot;70&quot; y=&quot;500&quot; width=&quot;680&quot; height=&quot;90&quot; as=&quot;geometry&quot;/&gt;&lt;/mxCell&gt;&lt;mxCell id=&quot;7&quot; value=&quot;Drill down&quot; style=&quot;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontFamily=Helvetica;strokeColor=#86868B;strokeWidth=2;endArrow=block;&quot; edge=&quot;1&quot; parent=&quot;1&quot; source=&quot;3&quot; target=&quot;4&quot;&gt;&lt;mxGeometry relative=&quot;1&quot; as=&quot;geometry&quot;/&gt;&lt;/mxCell&gt;&lt;mxCell id=&quot;8&quot; value=&quot;Validate&quot; style=&quot;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontFamily=Helvetica;strokeColor=#86868B;strokeWidth=2;endArrow=block;&quot; edge=&quot;1&quot; parent=&quot;1&quot; source=&quot;4&quot; target=&quot;5&quot;&gt;&lt;mxGeometry relative=&quot;1&quot; as=&quot;geometry&quot;/&gt;&lt;/mxCell&gt;&lt;/root&gt;&lt;/mxGraphModel&gt;&lt;/diagram&gt;&lt;/mxfile&gt;">
+  <title id="title">Reading GPU performance signals</title>
+  <desc id="desc">A three-stage diagnostic flow from broad GPU activity, through execution resource metrics, to useful workload outcomes.</desc>
+  <rect width="1200" height="680" fill="#F5F5F7"/>
+  <g font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif">
+    <text x="50" y="58" fill="#1D1D1F" font-size="32" font-weight="600">Reading GPU Performance Signals</text>
+    <text x="50" y="88" fill="#6E6E73" font-size="16">Start broad, then validate with workload outcomes</text>
+
+    <rect x="70" y="125" width="300" height="300" rx="12" fill="#FFFFFF" stroke="#D2D2D7"/>
+    <circle cx="110" cy="168" r="22" fill="#0071E3"/>
+    <text x="110" y="175" fill="#FFFFFF" font-size="19" font-weight="600" text-anchor="middle">1</text>
+    <text x="145" y="164" fill="#1D1D1F" font-size="20" font-weight="600">ACTIVITY</text>
+    <text x="145" y="189" fill="#6E6E73" font-size="14">Is any kernel running?</text>
+    <line x1="95" y1="215" x2="345" y2="215" stroke="#E5E5EA"/>
+    <text x="100" y="253" fill="#1D1D1F" font-size="18" font-weight="600">GPU-Util</text>
+    <text x="100" y="281" fill="#6E6E73" font-size="15">Busy time within a sample window</text>
+    <text x="100" y="320" fill="#1D1D1F" font-size="18" font-weight="600">Power &amp; clocks</text>
+    <text x="100" y="348" fill="#6E6E73" font-size="15">Useful supporting evidence</text>
+    <rect x="98" y="374" width="244" height="32" rx="8" fill="#F5F5F7" stroke="#E5E5EA"/>
+    <text x="220" y="395" fill="#6E6E73" font-size="13" font-weight="600" text-anchor="middle">SCREENING, NOT A VERDICT</text>
+
+    <path d="M385 275 H425" stroke="#86868B" stroke-width="2" fill="none"/>
+    <path d="M425 275 l-12 -8 v16 z" fill="#86868B"/>
+    <text x="405" y="258" fill="#86868B" font-size="12" text-anchor="middle">DRILL</text>
+
+    <rect x="450" y="125" width="300" height="300" rx="12" fill="#FFFFFF" stroke="#D2D2D7"/>
+    <circle cx="490" cy="168" r="22" fill="#0071E3"/>
+    <text x="490" y="175" fill="#FFFFFF" font-size="19" font-weight="600" text-anchor="middle">2</text>
+    <text x="525" y="164" fill="#1D1D1F" font-size="20" font-weight="600">EXECUTION</text>
+    <text x="525" y="189" fill="#6E6E73" font-size="14">Which resources are busy?</text>
+    <line x1="475" y1="215" x2="725" y2="215" stroke="#E5E5EA"/>
+    <text x="480" y="254" fill="#1D1D1F" font-size="17" font-weight="600">SM Active</text>
+    <text x="480" y="281" fill="#6E6E73" font-size="14">Are warps active on the SMs?</text>
+    <text x="480" y="319" fill="#1D1D1F" font-size="17" font-weight="600">DRAM Active</text>
+    <text x="480" y="346" fill="#6E6E73" font-size="14">Is memory bandwidth saturated?</text>
+    <text x="480" y="384" fill="#1D1D1F" font-size="17" font-weight="600">Tensor Core / stalls</text>
+    <text x="480" y="411" fill="#6E6E73" font-size="14">What is the kernel actually doing?</text>
+
+    <path d="M765 275 H805" stroke="#86868B" stroke-width="2" fill="none"/>
+    <path d="M805 275 l-12 -8 v16 z" fill="#86868B"/>
+    <text x="785" y="258" fill="#86868B" font-size="12" text-anchor="middle">VALIDATE</text>
+
+    <rect x="830" y="125" width="300" height="440" rx="12" fill="#FFFFFF" stroke="#D2D2D7"/>
+    <circle cx="870" cy="168" r="22" fill="#0071E3"/>
+    <text x="870" y="175" fill="#FFFFFF" font-size="19" font-weight="600" text-anchor="middle">3</text>
+    <text x="905" y="164" fill="#1D1D1F" font-size="20" font-weight="600">OUTCOME</text>
+    <text x="905" y="189" fill="#6E6E73" font-size="14">Is useful work fast?</text>
+    <line x1="855" y1="215" x2="1105" y2="215" stroke="#E5E5EA"/>
+    <text x="860" y="258" fill="#1D1D1F" font-size="18" font-weight="600">Throughput</text>
+    <text x="860" y="286" fill="#6E6E73" font-size="15">tokens/s or samples/s</text>
+    <text x="860" y="327" fill="#1D1D1F" font-size="18" font-weight="600">Latency</text>
+    <text x="860" y="355" fill="#6E6E73" font-size="15">step time or request latency</text>
+    <text x="860" y="396" fill="#1D1D1F" font-size="18" font-weight="600">MFU</text>
+    <text x="860" y="424" fill="#6E6E73" font-size="15">useful model FLOPs / peak FLOPs</text>
+    <rect x="855" y="465" width="250" height="70" rx="10" fill="#F5F5F7" stroke="#E5E5EA"/>
+    <text x="980" y="493" fill="#0071E3" font-size="14" font-weight="600" text-anchor="middle">THE FINAL TEST</text>
+    <text x="980" y="517" fill="#6E6E73" font-size="13" text-anchor="middle">Did the workload get faster?</text>
+
+    <rect x="70" y="500" width="680" height="90" rx="12" fill="#FFFFFF" stroke="#D2D2D7"/>
+    <rect x="70" y="500" width="5" height="90" rx="2" fill="#0071E3"/>
+    <text x="105" y="538" fill="#1D1D1F" font-size="20" font-weight="600">GPU-Util = 100%</text>
+    <text x="105" y="567" fill="#6E6E73" font-size="16">does not prove peak compute or useful model throughput.</text>
+    <text x="600" y="650" fill="#6E6E73" font-size="15" font-weight="600" text-anchor="middle">Activity tells you where to look. Outcomes tell you whether performance improved.</text>
+  </g>
+</svg>
