@@ -11,6 +11,99 @@ math: true
 
 A GPU cluster cannot be evaluated by "how many cards" alone. Whether a single card truly delivers its compute power, which communication path multi-GPU traffic takes, and whether the scheduler assigns GPUs in the right topology all directly impact training throughput. Analysis follows three layers: **is compute saturated → is communication constrained → does scheduling break the ideal topology**.
 
+## NVIDIA GPU Architecture Evolution
+
+![NVIDIA GPU architecture evolution from 2006 to 2024](../../.asset/gpu/gpu-architecture-evolution.svg)
+
+### Early Architectures (2006-2014)
+
+**Tesla Architecture (2006)**: NVIDIA first introduced the Tesla architecture, marking the beginning of all GPUs equipped with CUDA Cores, opening a new era for general-purpose computing. CUDA (Compute Unified Device Architecture) was first released in 2006, enabling GPUs to be used for general parallel computing rather than just graphics rendering.
+
+- **Representative Products**: GeForce 8800 GTX (consumer), Tesla C870 (compute card)
+
+**Fermi Architecture (2010)**: Before this, GPU processing cores were called Stream Processors (SP). Fermi architecture made significant improvements to processing cores, introducing better thread scheduling and management mechanisms, more efficient memory access patterns, ECC memory support, and a unified L2 cache. Processing cores were officially renamed CUDA Cores to emphasize tight integration with the CUDA programming model. Fermi's GF100 chip contained 16 SMs (Streaming Multiprocessors), each with 32 CUDA Cores. Each CUDA Core consisted of one floating-point unit (FPU) and one integer unit (ALU).
+
+- **Representative Products**: GeForce GTX 480 (consumer), Tesla C2050/C2070 (compute card)
+
+**Kepler Architecture (2012)** and **Maxwell Architecture (2014)**: These two generations continued Fermi's design philosophy, mainly improving performance by optimizing SM structure and significantly increasing CUDA Core count. Kepler introduced dynamic parallelism and Hyper-Q technology, while Maxwell focused on energy efficiency improvements. Logically speaking, more CUDA Cores mean greater compute power due to parallel execution.
+
+- **Kepler Representative Products**: GeForce GTX 680/TITAN (consumer), Tesla K20/K40/K80 (compute card)
+- **Maxwell Representative Products**: GeForce GTX 980/TITAN X (consumer), Tesla M40/M60 (compute card)
+
+### Deep Learning Era (2016-Present)
+
+**Pascal Architecture (2016)**: A turning point for NVIDIA GPUs evolving toward deep learning. Pascal introduced NVLink 1.0 high-speed interconnect technology, providing 160 GB/s bidirectional bandwidth, laying the foundation for multi-GPU communication. Pascal also introduced HBM2 (High Bandwidth Memory) and optimized FP16 half-precision performance. The P100 was the first data center GPU designed specifically for deep learning.
+
+- **Representative Products**: GeForce GTX 1080/TITAN X (consumer), Tesla P100 (data center), Quadro P6000 (professional)
+
+**Volta Architecture (2017)**: Marked a major breakthrough in deep learning optimization. Volta first introduced **Tensor Cores**, programmable matrix multiply-accumulate units designed specifically for AI training and inference. The V100 GPU contained 640 Tensor Cores, with 8 per SM. Each Tensor Core could execute 4×4×4 matrix multiplication per clock cycle, performing 64 floating-point multiply-accumulate (FMA) operations. Tensor Cores use fused multiply-add (FMA) to accept two 4×4 FP16 input matrices, perform matrix multiplication, then add a third matrix (FP16 or FP32), with output in FP16 or FP32 precision. This enabled mixed-precision computing at the hardware level—FP16 inputs reduce compute resources and memory bandwidth, while FP32 accumulation and output ensure precision and numerical stability. V100 achieved 8× higher deep learning throughput per SM and 12× overall performance improvement compared to Pascal P100. Volta also upgraded NVLink to 2.0, increasing bandwidth to 300 GB/s.
+
+- **Representative Products**: Tesla V100 (data center, 16GB/32GB HBM2), Quadro GV100 (professional), TITAN V (high-end consumer)
+
+**Turing Architecture (2018)**: Building on Tensor Cores, Turing first introduced **RT Cores** (ray tracing cores), expanding GPU applications to real-time ray tracing and hybrid rendering. Turing's Tensor Cores support INT8 and INT4 precision, optimized for inference scenarios with multi-precision support to improve inference performance and efficiency.
+
+- **Representative Products**: GeForce RTX 2080/2080 Ti (consumer), Tesla T4 (inference-focused), Quadro RTX 6000/8000 (professional)
+
+**Ampere Architecture (2020)**: Represented by the A100. Ampere features third-generation Tensor Cores supporting multiple data types (including TF32, BF16, FP64, INT8), and introduced structured sparsity acceleration achieving 2× speedup on specific sparse patterns. A100 supports **Multi-Instance GPU (MIG)** functionality, partitioning a single GPU into up to 7 independent instances, each with dedicated SMs, memory, memory controllers, and L2 cache for hardware-level isolation. A100's NVLink upgraded to 3.0 with 600 GB/s bandwidth. This enables A100 to support both large-scale training and efficient multi-tenant inference scenarios.
+
+- **Representative Products**: GeForce RTX 3090 (consumer), A100 (data center, 40GB/80GB HBM2e, PCIe/SXM), A10/A30/A40 (specialized for different scenarios)
+
+**Hopper Architecture (2022)**: Represented by the H100. Hopper features fourth-generation Tensor Cores and introduced the **Transformer Engine**, using dynamic FP8 and FP16 mixed precision specifically optimized for Transformer models, achieving up to 9× training acceleration and 30× inference acceleration (compared to A100). H100's NVLink upgraded to fourth generation with 900 GB/s per GPU bandwidth, supporting **NVLink Switch System** to build up to 256-GPU non-blocking, fully-connected networks providing high-bandwidth, low-latency communication infrastructure for large-scale clusters. H100's Tensor Cores support FP8 (8-bit floating-point) precision, further improving performance while maintaining model accuracy.
+
+- **Representative Products**: H100 (data center, 80GB HBM3, PCIe/SXM), H200 (data center, 141GB HBM3e), L40S (inference/graphics hybrid)
+
+**Blackwell Architecture (2024)**: Represented by B100/B200/GB200. Blackwell is NVIDIA's latest generation architecture featuring fifth-generation Tensor Cores. Blackwell GPUs contain 208 billion transistors, manufactured using custom TSMC 4NP process. B200 uses a dual-die design, connecting two reticle-limited dies as a single logical GPU via 10TB/s chip-to-chip interconnect. Blackwell supports FP4 (4-bit floating-point) precision, optimized for large language models (LLMs) and generative AI. NVLink upgraded to fifth generation (NVLink 5.0), providing 1.8TB/s bidirectional interconnect bandwidth per GPU. Blackwell focuses on performance improvements for large-scale AI model training and inference, especially for trillion-parameter model training efficiency.
+
+![Grace Blackwell architecture from superchip to rack-scale system](../../.asset/gpu/grace-blackwell-architecture.svg)
+
+**GB200 Grace Blackwell Superchip**: A key innovation of the Blackwell architecture, deeply integrating CPU with GPU. The GB200 superchip uses NVLink-C2C interconnect technology to tightly connect 1 NVIDIA Grace CPU with 2 Blackwell GPUs. The Grace CPU is based on ARM Neoverse V2 architecture with 72 cores, optimized for AI and HPC workloads. NVLink-C2C provides 900GB/s CPU-GPU bandwidth, enabling unified memory access and eliminating traditional PCIe bottlenecks.
+
+**GB200 NVL72 System**: A rack-scale massive AI system representing the ultimate form of Blackwell architecture. A single rack contains:
+- 36 Grace CPUs and 72 Blackwell GPUs (36 GB200 superchips)
+- Interconnected via NVLink Switch System, forming a 72-GPU NVLink domain operating as a single massive GPU
+- Provides 130TB/s low-latency GPU-to-GPU communication bandwidth
+- Unified 13.5TB HBM3e memory
+- 130 PetaFLOPS FP4 compute
+- Liquid cooling design with ~120kW rack power
+- 30× faster real-time trillion-parameter LLM inference compared to H100 systems
+
+GB200 NVL72 realizes the true "rack-scale GPU" concept, with 72 GPUs fully interconnected via NVLink 5.0. Any two GPUs have equal-distance, high-bandwidth connections, eliminating network bottlenecks in traditional multi-node systems. Nine dedicated NVLink Switch boards form a switching fabric enabling non-blocking GPU-to-GPU communication.
+
+- **Representative Products**:
+  - B100 (data center single card)
+  - B200 (data center single card, 192GB HBM3e)
+  - GB200 (Grace-Blackwell superchip, CPU+2×GPU)
+  - GB200 NVL72 (rack-scale system, 36×CPU + 72×GPU)
+  - DGX GB200 (complete liquid-cooled rack solution)
+
+**References**:
+- [NVIDIA DGX GB200](https://www.nvidia.com/en-us/data-center/dgx-gb200/)
+- [GB200 NVL72 System](https://www.nvidia.com/en-us/data-center/gb200-nvl72/)
+- [GB200 Multi-Node Tuning Guide](https://docs.nvidia.com/multi-node-nvlink-systems/multi-node-tuning-guide/overview.html)
+
+### Tensor Core and Mixed Precision Training
+
+The introduction of Tensor Cores changed the way deep learning training works. Mixed precision training is not simply using FP16 and FP32 together in a model, but rather using half-precision (FP16) for input and output at the hardware operator level, while using full-precision (FP32) for intermediate calculations, significantly improving performance without losing too much precision.
+
+Mixed precision training workflow:
+
+1. **Weight conversion**: Convert FP32 weights to FP16 for forward propagation, while keeping FP32 copies for parameter updates
+2. **Forward propagation**: Use FP16 activations and weights for computation, obtaining FP16 loss
+3. **Loss Scaling**: Scale FP16 loss by several times to avoid gradient underflow from values too small
+4. **Backward propagation**: Calculate gradients using scaled loss, obtaining scaled FP16 gradients
+5. **Gradient Unscaling**: Convert FP16 gradients to FP32 and unscale to get actual gradient values
+6. **Parameter update**: Use FP32 gradients to update FP32 weight copies
+
+This mechanism requires hardware support. Tensor Cores are specifically designed to accelerate FP16 computation while maintaining FP32 accumulation precision, making mixed precision training possible. Frameworks like PyTorch and TensorFlow provide automated support for mixed precision training.
+
+### Tensor Core and CUDA Programming
+
+In CUDA programming, developers control parallel execution through Warps (typically containing 32 threads). Threads within a Warp execute synchronously, leveraging GPU parallel computing capabilities. A single Tensor Core executes 4×4×4 operations per cycle, but CUDA packages multiple Tensor Cores via Warp, exposing 16×16×16 GEMM operation APIs (`wmma::mma_sync`).
+
+Convolution operations are converted to matrix multiplication (GEMM) via the Im2Col algorithm, fully utilizing Tensor Core compute capabilities. Im2Col rearranges input data into large matrices, and convolution kernels are also converted to matrices, transforming the original convolution operation into matrix multiplication. This transformed GEMM can leverage Tensor Core's powerful compute capabilities for efficient acceleration.
+
+In actual execution, large-scale matrices (such as 2048×2048 inputs in Transformers) are decomposed into Fragments, organized for execution through Thread Blocks. Thread Blocks further extract data to form Warp-level computation, ultimately mapping to Tensor Core's 4×4×4 input scale, achieving efficient mapping from application layer to hardware layer.
+
 ## GPU Performance Metrics
 
 ### GPU Runtime Performance
@@ -19,7 +112,7 @@ A GPU cluster cannot be evaluated by "how many cards" alone. Whether a single ca
 
 When judging runtime performance, observe metrics at different levels in combination:
 
-![GPU performance signals from activity to workload outcomes](../../.asset/gpu/gpu-performance-signals.drawio.svg)
+![GPU performance signals from activity to workload outcomes](../../.asset/gpu/gpu-performance-signals.svg)
 
 | Metric | What it answers | Main limitation |
 | --- | --- | --- |
@@ -84,7 +177,7 @@ PCIe is the universal interconnect between GPU and CPU, NIC, and other devices, 
 
 Common paths from best to worst roughly:
 
-![Direct NVLink communication compared with host-staged PCIe fallback](../../.asset/gpu/gpu-interconnect-paths.drawio.svg)
+![Direct NVLink communication compared with host-staged PCIe fallback](../../.asset/gpu/gpu-interconnect-paths.svg)
 
 ```text
 Same-domain NVLink/NVSwitch
@@ -134,7 +227,7 @@ Corresponding governance includes topology-aware Filter/Score, Gang Scheduling/c
 
 Topology-aware scheduling divides into three layers:
 
-![Topology-aware scheduling from workload intent to GPU placement](../../.asset/gpu/gpu-topology-scheduling.drawio.svg)
+![Topology-aware scheduling from workload intent to GPU placement](../../.asset/gpu/gpu-topology-scheduling.svg)
 
 | Layer | What the scheduler must ensure | Applicable scenario | Common strategy |
 | --- | --- | --- | --- |
@@ -178,7 +271,7 @@ Whole-card scheduling suits large-scale training and online inference with stric
 
 GPU sharing can be implemented at **hardware, driver, runtime, and scheduler** levels, with different capabilities and costs:
 
-![GPU sharing methods from time-slicing to hardware partitioning](../../.asset/gpu/gpu-sharing-methods.drawio.svg)
+![GPU sharing methods from time-slicing to hardware partitioning](../../.asset/gpu/gpu-sharing-methods.svg)
 
 #### 1. Time-Slicing
 
@@ -193,7 +286,7 @@ NVIDIA GPU driver supports time-slice scheduling among multiple CUDA contexts. T
 
 MPS is a runtime-layer sharing solution provided by NVIDIA. It starts an MPS server; multiple client processes connect to the same CUDA context through MPS client. MPS spatially multiplexes kernels from different processes on SMs and memory, rather than simple time-slicing.
 
-![MPS architecture showing space multiplexing vs context switching](../../.asset/gpu/mps-architecture.drawio.svg)
+![MPS architecture showing space multiplexing vs context switching](../../.asset/gpu/mps-architecture.svg)
 
 ##### How MPS Works
 
@@ -292,7 +385,7 @@ Summary: MPS is an effective means to improve GPU utilization in **trusted envir
 
 MIG is hardware-level partitioning capability provided by A100/H100 and later Ampere-generation architectures. It partitions a physical GPU into multiple GPU Instances (GI), each GI has independent SMs, memory, memory controllers, and cache, completely isolated from each other.
 
-![MIG hardware partitioning with complete isolation](../../.asset/gpu/mig-architecture.drawio.svg)
+![MIG hardware partitioning with complete isolation](../../.asset/gpu/mig-architecture.svg)
 
 - **Pros**: Hardware-level isolation, faults and OOM don't affect across instances; each instance has clear compute and memory limits; supports error isolation and QoS guarantees.
 - **Cons**: Only supports specific GPU models; partition configurations fixed (e.g. 1g.5gb, 2g.10gb, 3g.20gb), can't fine-tune on demand; switching MIG configuration requires GPU reset; not suitable for training tasks needing large memory or full compute.
@@ -312,7 +405,7 @@ vGPU is a virtualization solution provided by NVIDIA vGPU software, mainly for v
 
 Beyond the above underlying technologies, scheduler-level support is also needed to let multiple Pods reasonably share GPUs and avoid oversubscription.
 
-![GPU sharing architecture from workload to hardware](../../.asset/gpu/gpu-sharing-architecture.drawio.svg)
+![GPU sharing architecture from workload to hardware](../../.asset/gpu/gpu-sharing-architecture.svg)
 
 #### GPUShare (Alibaba Cloud/NVIDIA)
 

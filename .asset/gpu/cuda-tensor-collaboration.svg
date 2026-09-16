@@ -1,0 +1,204 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1050" viewBox="0 0 1200 1050" role="img" aria-labelledby="title desc">
+  <title id="title">CUDA Core and Tensor Core Collaboration</title>
+  <desc id="desc">How CUDA Cores and Tensor Cores work together in deep learning workloads</desc>
+  <rect width="1200" height="1050" fill="#F5F5F7"/>
+  <g font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif">
+    <text x="50" y="58" fill="#1D1D1F" font-size="32" font-weight="600">CUDA Core &amp; Tensor Core Collaboration</text>
+    <text x="50" y="88" fill="#6E6E73" font-size="16">Division of labor in deep learning: Matrix operations vs Element-wise operations</text>
+
+    <!-- Transformer Forward Pass Example -->
+    <rect x="60" y="130" width="1080" height="540" rx="12" fill="#FFFFFF" stroke="#D2D2D7"/>
+    <text x="600" y="165" fill="#1D1D1F" font-size="24" font-weight="600" text-anchor="middle">Transformer Forward Pass Example</text>
+
+    <!-- Column 1 -->
+    <g transform="translate(100, 200)">
+      <!-- Input Embedding -->
+      <rect x="0" y="0" width="200" height="65" rx="6" fill="#E5E5EA" stroke="#86868B"/>
+      <text x="100" y="27" fill="#1D1D1F" font-size="15" font-weight="600" text-anchor="middle">Input Embedding</text>
+      <text x="100" y="45" fill="#6E6E73" font-size="12" text-anchor="middle">Lookup table access</text>
+      <circle cx="175" cy="52" r="11" fill="#34C759"/>
+      <text x="175" y="57" fill="#FFFFFF" font-size="9" font-weight="600" text-anchor="middle">CC</text>
+
+      <path d="M 100 65 L 100 85" stroke="#1D1D1F" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+
+      <!-- Q/K/V Projection -->
+      <rect x="0" y="95" width="200" height="65" rx="6" fill="#FF9500" stroke="#E67700"/>
+      <text x="100" y="122" fill="#FFFFFF" font-size="15" font-weight="600" text-anchor="middle">Q/K/V Projection</text>
+      <text x="100" y="140" fill="#FFE5CC" font-size="12" text-anchor="middle">X × W_Q, X × W_K, X × W_V</text>
+      <circle cx="175" cy="147" r="11" fill="#FFFFFF"/>
+      <text x="175" y="152" fill="#FF9500" font-size="9" font-weight="600" text-anchor="middle">TC</text>
+
+      <path d="M 100 160 L 100 180" stroke="#1D1D1F" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+
+      <!-- Attention Score -->
+      <rect x="0" y="190" width="200" height="65" rx="6" fill="#FF9500" stroke="#E67700"/>
+      <text x="100" y="217" fill="#FFFFFF" font-size="15" font-weight="600" text-anchor="middle">Attention Score</text>
+      <text x="100" y="235" fill="#FFE5CC" font-size="12" text-anchor="middle">Q × K^T</text>
+      <circle cx="175" cy="242" r="11" fill="#FFFFFF"/>
+      <text x="175" y="247" fill="#FF9500" font-size="9" font-weight="600" text-anchor="middle">TC</text>
+
+      <path d="M 100 255 L 100 275" stroke="#1D1D1F" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+
+      <!-- Softmax -->
+      <rect x="0" y="285" width="200" height="65" rx="6" fill="#34C759" stroke="#2A9D3F"/>
+      <text x="100" y="312" fill="#FFFFFF" font-size="15" font-weight="600" text-anchor="middle">Softmax</text>
+      <text x="100" y="330" fill="#D5F5DE" font-size="12" text-anchor="middle">exp(x) / sum(exp(x))</text>
+      <circle cx="175" cy="337" r="11" fill="#FFFFFF"/>
+      <text x="175" y="342" fill="#34C759" font-size="9" font-weight="600" text-anchor="middle">CC</text>
+
+      <path d="M 100 350 L 100 370" stroke="#1D1D1F" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+
+      <!-- Attention Output -->
+      <rect x="0" y="380" width="200" height="65" rx="6" fill="#FF9500" stroke="#E67700"/>
+      <text x="100" y="407" fill="#FFFFFF" font-size="15" font-weight="600" text-anchor="middle">Attention Output</text>
+      <text x="100" y="425" fill="#FFE5CC" font-size="12" text-anchor="middle">Attention × V</text>
+      <circle cx="175" cy="432" r="11" fill="#FFFFFF"/>
+      <text x="175" y="437" fill="#FF9500" font-size="9" font-weight="600" text-anchor="middle">TC</text>
+    </g>
+
+    <!-- Column 2 -->
+    <g transform="translate(400, 200)">
+      <!-- LayerNorm 1 -->
+      <rect x="0" y="0" width="200" height="65" rx="6" fill="#34C759" stroke="#2A9D3F"/>
+      <text x="100" y="27" fill="#FFFFFF" font-size="15" font-weight="600" text-anchor="middle">LayerNorm</text>
+      <text x="100" y="45" fill="#D5F5DE" font-size="12" text-anchor="middle">(x - mean) / std</text>
+      <circle cx="175" cy="52" r="11" fill="#FFFFFF"/>
+      <text x="175" y="57" fill="#34C759" font-size="9" font-weight="600" text-anchor="middle">CC</text>
+
+      <path d="M 100 65 L 100 85" stroke="#1D1D1F" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+
+      <!-- FFN Linear 1 -->
+      <rect x="0" y="95" width="200" height="65" rx="6" fill="#FF9500" stroke="#E67700"/>
+      <text x="100" y="122" fill="#FFFFFF" font-size="15" font-weight="600" text-anchor="middle">FFN Linear 1</text>
+      <text x="100" y="140" fill="#FFE5CC" font-size="12" text-anchor="middle">X × W1</text>
+      <circle cx="175" cy="147" r="11" fill="#FFFFFF"/>
+      <text x="175" y="152" fill="#FF9500" font-size="9" font-weight="600" text-anchor="middle">TC</text>
+
+      <path d="M 100 160 L 100 180" stroke="#1D1D1F" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+
+      <!-- GELU Activation -->
+      <rect x="0" y="190" width="200" height="65" rx="6" fill="#34C759" stroke="#2A9D3F"/>
+      <text x="100" y="217" fill="#FFFFFF" font-size="15" font-weight="600" text-anchor="middle">GELU Activation</text>
+      <text x="100" y="235" fill="#D5F5DE" font-size="12" text-anchor="middle">x * Φ(x)</text>
+      <circle cx="175" cy="242" r="11" fill="#FFFFFF"/>
+      <text x="175" y="247" fill="#34C759" font-size="9" font-weight="600" text-anchor="middle">CC</text>
+
+      <path d="M 100 255 L 100 275" stroke="#1D1D1F" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+
+      <!-- Dropout -->
+      <rect x="0" y="285" width="200" height="65" rx="6" fill="#34C759" stroke="#2A9D3F"/>
+      <text x="100" y="312" fill="#FFFFFF" font-size="15" font-weight="600" text-anchor="middle">Dropout</text>
+      <text x="100" y="330" fill="#D5F5DE" font-size="12" text-anchor="middle">Random masking</text>
+      <circle cx="175" cy="337" r="11" fill="#FFFFFF"/>
+      <text x="175" y="342" fill="#34C759" font-size="9" font-weight="600" text-anchor="middle">CC</text>
+
+      <path d="M 100 350 L 100 370" stroke="#1D1D1F" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+
+      <!-- FFN Linear 2 -->
+      <rect x="0" y="380" width="200" height="65" rx="6" fill="#FF9500" stroke="#E67700"/>
+      <text x="100" y="407" fill="#FFFFFF" font-size="15" font-weight="600" text-anchor="middle">FFN Linear 2</text>
+      <text x="100" y="425" fill="#FFE5CC" font-size="12" text-anchor="middle">X × W2</text>
+      <circle cx="175" cy="432" r="11" fill="#FFFFFF"/>
+      <text x="175" y="437" fill="#FF9500" font-size="9" font-weight="600" text-anchor="middle">TC</text>
+    </g>
+
+    <!-- Column 3 -->
+    <g transform="translate(700, 200)">
+      <!-- LayerNorm 2 -->
+      <rect x="0" y="0" width="200" height="65" rx="6" fill="#34C759" stroke="#2A9D3F"/>
+      <text x="100" y="27" fill="#FFFFFF" font-size="15" font-weight="600" text-anchor="middle">LayerNorm</text>
+      <text x="100" y="45" fill="#D5F5DE" font-size="12" text-anchor="middle">(x - mean) / std</text>
+      <circle cx="175" cy="52" r="11" fill="#FFFFFF"/>
+      <text x="175" y="57" fill="#34C759" font-size="9" font-weight="600" text-anchor="middle">CC</text>
+
+      <path d="M 100 65 L 100 85" stroke="#1D1D1F" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+
+      <!-- Residual Add -->
+      <rect x="0" y="95" width="200" height="65" rx="6" fill="#34C759" stroke="#2A9D3F"/>
+      <text x="100" y="122" fill="#FFFFFF" font-size="15" font-weight="600" text-anchor="middle">Residual Add</text>
+      <text x="100" y="140" fill="#D5F5DE" font-size="12" text-anchor="middle">x + residual</text>
+      <circle cx="175" cy="147" r="11" fill="#FFFFFF"/>
+      <text x="175" y="152" fill="#34C759" font-size="9" font-weight="600" text-anchor="middle">CC</text>
+
+      <!-- Output -->
+      <rect x="25" y="180" width="150" height="50" rx="6" fill="#5E5CE6"/>
+      <text x="100" y="210" fill="#FFFFFF" font-size="15" font-weight="600" text-anchor="middle">Layer Output</text>
+    </g>
+
+    <!-- Legend -->
+    <rect x="920" y="200" width="200" height="280" rx="8" fill="#F5F5F7" stroke="#D2D2D7"/>
+    <text x="1020" y="230" fill="#1D1D1F" font-size="18" font-weight="600" text-anchor="middle">Core Types</text>
+
+    <rect x="940" y="250" width="160" height="50" rx="4" fill="#FF9500"/>
+    <text x="1020" y="272" fill="#FFFFFF" font-size="14" font-weight="600" text-anchor="middle">Tensor Core</text>
+    <text x="1020" y="290" fill="#FFE5CC" font-size="12" text-anchor="middle">Matrix operations</text>
+
+    <rect x="940" y="315" width="160" height="50" rx="4" fill="#34C759"/>
+    <text x="1020" y="337" fill="#FFFFFF" font-size="14" font-weight="600" text-anchor="middle">CUDA Core</text>
+    <text x="1020" y="355" fill="#D5F5DE" font-size="12" text-anchor="middle">Element-wise ops</text>
+
+    <text x="1020" y="390" fill="#1D1D1F" font-size="13" font-weight="600" text-anchor="middle">Typical Split:</text>
+    <text x="1020" y="410" fill="#FF9500" font-size="13" font-weight="600" text-anchor="middle">70-90% Tensor Core</text>
+    <text x="1020" y="428" fill="#6E6E73" font-size="11" text-anchor="middle">(Matrix multiply heavy)</text>
+    <text x="1020" y="450" fill="#34C759" font-size="13" font-weight="600" text-anchor="middle">10-30% CUDA Core</text>
+    <text x="1020" y="468" fill="#6E6E73" font-size="11" text-anchor="middle">(Activations, norms)</text>
+
+    <!-- Operation Categories -->
+    <rect x="60" y="700" width="540" height="310" rx="12" fill="#FFFFFF" stroke="#D2D2D7"/>
+    <text x="330" y="735" fill="#1D1D1F" font-size="22" font-weight="600" text-anchor="middle">Tensor Core Operations</text>
+
+    <g transform="translate(80, 760)">
+      <circle cx="8" cy="8" r="6" fill="#FF9500"/>
+      <text x="25" y="13" fill="#1D1D1F" font-size="14" font-weight="600">Matrix Multiplication (GEMM)</text>
+      <text x="25" y="30" fill="#6E6E73" font-size="12">• Fully connected layers: Y = X × W</text>
+      <text x="25" y="45" fill="#6E6E73" font-size="12">• Attention: Q×K^T, Attention×V</text>
+      <text x="25" y="60" fill="#6E6E73" font-size="12">• Convolution (via Im2Col → GEMM)</text>
+
+      <circle cx="8" cy="88" r="6" fill="#FF9500"/>
+      <text x="25" y="93" fill="#1D1D1F" font-size="14" font-weight="600">Batch Matrix Multiply</text>
+      <text x="25" y="110" fill="#6E6E73" font-size="12">• Batched attention computation</text>
+      <text x="25" y="125" fill="#6E6E73" font-size="12">• Multi-head attention parallel</text>
+
+      <circle cx="8" cy="153" r="6" fill="#FF9500"/>
+      <text x="25" y="158" fill="#1D1D1F" font-size="14" font-weight="600">Mixed Precision Training</text>
+      <text x="25" y="175" fill="#6E6E73" font-size="12">• FP16 input, FP32 accumulation</text>
+      <text x="25" y="190" fill="#6E6E73" font-size="12">• 8-20× speedup over pure FP32</text>
+      <text x="25" y="205" fill="#6E6E73" font-size="12">• Automatic in PyTorch/TensorFlow</text>
+
+      <rect x="0" y="230" width="500" height="50" rx="4" fill="#FFF3E0"/>
+      <text x="250" y="260" fill="#FF9500" font-size="14" font-weight="600" text-anchor="middle">Dominant compute in deep learning (70-90%)</text>
+    </g>
+
+    <rect x="640" y="700" width="500" height="310" rx="12" fill="#FFFFFF" stroke="#D2D2D7"/>
+    <text x="890" y="735" fill="#1D1D1F" font-size="22" font-weight="600" text-anchor="middle">CUDA Core Operations</text>
+
+    <g transform="translate(660, 760)">
+      <circle cx="8" cy="8" r="6" fill="#34C759"/>
+      <text x="25" y="13" fill="#1D1D1F" font-size="14" font-weight="600">Activation Functions</text>
+      <text x="25" y="30" fill="#6E6E73" font-size="12">• ReLU, GELU, Sigmoid, Tanh</text>
+      <text x="25" y="45" fill="#6E6E73" font-size="12">• Element-wise non-linear transforms</text>
+
+      <circle cx="8" cy="73" r="6" fill="#34C759"/>
+      <text x="25" y="78" fill="#1D1D1F" font-size="14" font-weight="600">Normalization</text>
+      <text x="25" y="95" fill="#6E6E73" font-size="12">• BatchNorm, LayerNorm, RMSNorm</text>
+      <text x="25" y="110" fill="#6E6E73" font-size="12">• Mean/variance computation</text>
+
+      <circle cx="8" cy="138" r="6" fill="#34C759"/>
+      <text x="25" y="143" fill="#1D1D1F" font-size="14" font-weight="600">Element-wise Operations</text>
+      <text x="25" y="160" fill="#6E6E73" font-size="12">• Addition, multiplication, division</text>
+      <text x="25" y="175" fill="#6E6E73" font-size="12">• Dropout, residual connections</text>
+      <text x="25" y="190" fill="#6E6E73" font-size="12">• Loss functions, gradient clipping</text>
+
+      <rect x="0" y="215" width="460" height="65" rx="4" fill="#E8FFE8"/>
+      <text x="230" y="240" fill="#34C759" font-size="14" font-weight="600" text-anchor="middle">Support operations (10-30%)</text>
+      <text x="230" y="260" fill="#6E6E73" font-size="12" text-anchor="middle">Still critical for correctness and convergence</text>
+    </g>
+
+    <!-- Arrow marker definition -->
+    <defs>
+      <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+        <polygon points="0 0, 10 3, 0 6" fill="#1D1D1F"/>
+      </marker>
+    </defs>
+  </g>
+</svg>

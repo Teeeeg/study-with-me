@@ -36,3 +36,14 @@
     - status: todo
       en: How does Reasoning Model work
       zh: 推理模型是如何工作的
+    
+
+- dir: /ai/platform/
+  title:
+    en: AI Platform
+    zh: AI 平台
+  items:
+    - status: done
+      ref: k8s-gpu-scheduling
+      en: Kubernetes GPU Management Challenges
+      zh: Kubernetes GPU 管理的难点
