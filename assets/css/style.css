@@ -223,6 +223,13 @@ a:hover { text-decoration: underline; }
 
 .prose hr { border: 0; border-top: 1px solid var(--border); margin: 2.4rem 0; }
 
+/* Math is built as SVG, so it follows the text colour and needs its own
+   scroll container when a display equation is wider than the column. */
+mjx-container[display="true"] {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 0;
+}
 code {
   font-family: var(--mono);
   font-size: .875em;

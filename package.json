@@ -12,6 +12,8 @@
     "devDependencies": {
         "@11ty/eleventy": "^3.0.0",
         "@11ty/eleventy-plugin-syntaxhighlight": "^5.0.0",
-        "js-yaml": "^4.1.0"
+        "js-yaml": "^4.1.0",
+        "markdown-it": "^15.0.2",
+        "markdown-it-mathjax3": "^5.2.0"
     }
 }

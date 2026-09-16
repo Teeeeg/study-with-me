@@ -20,19 +20,6 @@
   {% if altPage %}
   <link rel="alternate" hreflang="{{ 'zh-CN' if otherLang == 'zh' else 'en' }}" href="{{ altPage.url | url }}">
   {% endif %}
-  {% if math %}
-  <script>
-    window.MathJax = {
-      tex: {
-        inlineMath: [["$", "$"]],
-        displayMath: [["$$", "$$"]],
-        processEscapes: true
-      },
-      options: { skipHtmlTags: ["script", "noscript", "style", "textarea", "pre", "code"] }
-    };
-  </script>
-  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js"></script>
-  {% endif %}
 </head>
 <body>
   <a class="skip-link" href="#main">{{ t.skip }}</a>

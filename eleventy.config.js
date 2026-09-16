@@ -2,6 +2,7 @@ import path from "node:path";
 import fs from "node:fs";
 import crypto from "node:crypto";
 import yaml from "js-yaml";
+import mathjax from "markdown-it-mathjax3";
 import syntaxHighlight from "@11ty/eleventy-plugin-syntaxhighlight";
 
 // Change this if the repository is renamed, or set it to "/" for a user site.
@@ -15,6 +16,22 @@ const leafTitle = (dir) => {
 
 export default function (eleventyConfig) {
   eleventyConfig.addPlugin(syntaxHighlight);
+
+  /**
+   * Math is rendered to SVG during the build. Doing it in the browser fails on
+   * common TeX because Markdown claims `_`, `*` and `\` first: `$W_Q$ ... $W_K$`
+   * becomes emphasis, and `\{` loses its backslash, before MathJax ever runs.
+   */
+  eleventyConfig.amendLibrary("md", (md) => {
+    md.use(mathjax);
+    // The plugin pretty-prints its wrapper, and that indentation shows up as a
+    // stray space next to every inline formula.
+    for (const rule of ["math_inline", "math_block"]) {
+      const render = md.renderer.rules[rule];
+      md.renderer.rules[rule] = (...args) =>
+        render(...args).replace(/>\s+</g, "><").trim();
+    }
+  });
 
   eleventyConfig.addDataExtension("yml,yaml", (contents) =>
     yaml.load(contents),
@@ -144,6 +161,29 @@ export default function (eleventyConfig) {
       return `src="${path.posix.join(PATH_PREFIX, resolved)}"`;
     });
   });
+
+  /**
+   * MathJax repeats its whole stylesheet next to every formula, scoped to that
+   * formula, which triples the weight of a math-heavy note. Lift one copy into
+   * the head and drop the rest; the per-instance `#mjx-…` rule stays put.
+   */
+  eleventyConfig.addTransform("hoist-mathjax-css", function (content) {
+    if (!this.page.outputPath || !this.page.outputPath.endsWith(".html"))
+      return content;
+
+    let shared = null;
+    const stripped = content.replace(
+      /\nmjx-container\[jax="SVG"\] \{[\s\S]*?(?=\s*\}\s*<\/style>)/g,
+      (css) => {
+        shared ??= css;
+        return "\n";
+      },
+    );
+
+    if (!shared) return content;
+    return stripped.replace("</head>", `<style>${shared}</style></head>`);
+  });
+
 
   return {
     pathPrefix: PATH_PREFIX,
