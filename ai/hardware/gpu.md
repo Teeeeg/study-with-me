@@ -1,239 +1,362 @@
 ---
-title: GPU Performance, Communication, and Scheduling
-description: GPU performance metrics, NVLink and PCIe communication, and topology-aware cluster scheduling.
+title: GPU Performance, Communication & Scheduling
+description: From performance metrics, NVLink & PCIe communication, to topology-aware scheduling in clusters.
 lang: en
 ref: gpu
 nav_order: 1
 math: true
 ---
 
-# GPU Performance, Communication, and Scheduling
+# GPU Performance, Communication & Scheduling
 
-A GPU cluster is more than a count of available accelerators. Training
-throughput depends on whether each GPU uses its compute resources effectively,
-which path data takes between GPUs, and whether the scheduler preserves the
-ideal hardware topology. A useful diagnostic order is: **check compute
-saturation, locate communication limits, then verify placement topology**.
+A GPU cluster cannot be evaluated by "how many cards" alone. Whether a single card truly delivers its compute power, which communication path multi-GPU traffic takes, and whether the scheduler assigns GPUs in the right topology all directly impact training throughput. Analysis follows three layers: **is compute saturated → is communication constrained → does scheduling break the ideal topology**.
 
 ## GPU Performance Metrics
 
-### Runtime Performance
+### GPU Runtime Performance
 
-`GPU-Util` in `nvidia-smi` answers whether the GPU executed one or more kernels
-during a sampling interval. It does not answer how much of the GPU's compute
-capacity those kernels used. A kernel that occupies only a few execution units
-or mostly moves data can still produce a value close to 100%.
+`GPU-Util` in `nvidia-smi` answers "was the GPU working during the sampling period", not "how much of the GPU's compute capacity was used". It measures the percentage of time one or more kernels were executing on the GPU during the sampling period; even if a kernel uses only a few execution units or mainly moves data, this value can approach 100%.
 
-Performance analysis therefore requires metrics from several layers:
+When judging runtime performance, observe metrics at different levels in combination:
 
 ![GPU performance signals from activity to workload outcomes](../../.asset/gpu/gpu-performance-signals.drawio.svg)
 
-| Metric | Question it answers | Main limitation |
+| Metric | What it answers | Main limitation |
 | --- | --- | --- |
-| `GPU-Util` | Was a kernel executing during the sample window? | Does not show how many SMs, Tensor Cores, or FLOPS were used |
-| SM Active / SM Efficiency | During how many cycles did an SM have an active warp? | An active SM does not imply full use of its execution units |
-| SM Occupancy | What fraction of the SM's possible active warps was resident? | High occupancy does not guarantee a faster kernel or high compute throughput |
-| DRAM Active / Memory Utilization | How busy were the memory controllers or memory bandwidth? | High activity shows data movement, not useful computation |
-| Tensor Core utilization | Were matrix execution units being used? | Applies only to operations that can map to Tensor Cores |
-| MFU (Model FLOPs Utilization) | What fraction of theoretical peak FLOPS performed useful model work? | Depends on the model FLOPS estimate, numerical precision, and hardware peak |
-| Throughput and latency | How many tokens or samples are processed per second, or how long does a request take? | Shows the outcome but does not identify the bottleneck |
+| `GPU-Util` | Was the GPU executing kernels during the sample period | Doesn't indicate SM, Tensor Core, or FLOPS utilization |
+| SM Active / SM Efficiency | How many cycles had active warps | SM activity ≠ all execution units fully utilized |
+| SM Occupancy | Ratio of active warps the SM can hold | High occupancy doesn't guarantee faster kernels or high compute throughput |
+| DRAM Active / Memory Utilization | How busy the memory controller or bandwidth is | High values only indicate busy data movement, not effective compute |
+| Tensor Core utilization | Whether matrix compute units are being used | Only applies to operations that map to Tensor Cores |
+| MFU (Model FLOPs Utilization) | Model effective FLOPS as a fraction of hardware theoretical peak | Depends on model FLOPS estimation, precision, and hardware peak; can't be sampled per-kernel |
+| Throughput & Latency | tokens/samples per second, or request duration | Final result metric, doesn't isolate bottleneck location |
 
-A common definition of MFU is:
+MFU is commonly defined as:
 
 $$
 \mathrm{MFU} =
-\frac{\text{theoretical model FLOPs per step} \times \text{steps per second}}
-{\text{number of GPUs} \times \text{peak FLOPS per GPU at the selected precision}}
+\frac{\text{Model theoretical FLOPs per step} \times \text{Training steps per second}}
+{\text{Number of GPUs} \times \text{Per-GPU peak FLOPS at precision}}
 $$
 
-MFU is closer to training efficiency than `GPU-Util`, but sources may count
-model FLOPS, sparsity, and recomputation differently. Compare MFU values only
-when they use the same methodology.
+MFU is closer to training efficiency than `GPU-Util`, but different sources may count model FLOPS, sparse computation, and recomputation differently, so only compare when the methodology is consistent.
 
-#### Combining Metrics to Identify Bottlenecks
+#### Using Metric Combinations to Diagnose Bottlenecks
 
 | Observation | Likely state | Next step |
 | --- | --- | --- |
-| High `GPU-Util`, high SM Active, stable throughput | The GPU is computing continuously | Inspect Tensor Core use, instruction throughput, and kernel efficiency |
-| High `GPU-Util`, low SM Active, high DRAM Active | Memory-bound execution or frequent transfers | Check arithmetic intensity, kernel fusion, data layout, and H2D copies |
-| High SM Active but low MFU | Kernels run continuously but perform little useful model work | Look for small kernels, non-Tensor-Core operators, communication kernels, and synchronization |
-| Periodic troughs in GPU activity | The CPU, DataLoader, or communication layer is not supplying work | Correlate with CPU, storage, network, and NCCL timelines |
-| Power or clock limits are reached without more performance | Power, thermal, or frequency throttling | Inspect clocks, power limit, temperature, and throttling reasons |
+| `GPU-Util` high, SM Active high, throughput stable | GPU is continuously computing | Check Tensor Core, instruction throughput, and kernel efficiency |
+| `GPU-Util` high, SM Active low, DRAM Active high | memory-bound or frequent data movement | Check arithmetic intensity, kernel fusion, data layout, and H2D copies |
+| SM Active high, but MFU low | kernels running continuously but little effective model compute | Check small kernels, non-Tensor-Core ops, communication kernels, and synchronization waits |
+| GPU metrics show periodic valleys | CPU/DataLoader or communication undersupply | Cross-reference CPU, disk, network, and NCCL timeline |
+| Power or clocks hit limit, performance stops growing | power wall, thermal wall, or frequency limit | Check clocks, power limit, temperature, and throttling reason |
 
-Use these commands for a quick first look:
+For quick observation, command-line tools can view device-level utilization, memory bandwidth, power, and clocks.
+These tools are mainly for quick triage. To accurately distinguish compute, memory, and stall causes, use DCGM Profiling 
+Metrics, Nsight Systems, Nsight Compute, or framework profilers. The optimization sequence is typically: confirm gap 
+with throughput/MFU, use timeline to find wait intervals, then drill into specific kernels; don't tune around a single 
+utilization number.
 
-```bash
-# Continuous device-level utilization, memory, power, and clock view
-nvidia-smi dmon -s pucm -d 2
+## GPU Communication
 
-# Inspect temperature, power, and SM clocks
-nvidia-smi --query-gpu=index,temperature.gpu,power.draw,power.limit,clocks.sm \
-	--format=csv
-```
+Effective GPU-to-GPU communication performance is determined by **physical links, topology distance, message size, and collective algorithms**. NCCL reads system topology and selects communication paths for AllReduce, AllGather, ReduceScatter, etc., but automatic selection cannot fix incorrect wiring, disabled P2P, or unreasonable GPU assignments.
 
-`dmon` and `GPU-Util` remain screening tools. Use DCGM Profiling Metrics,
-Nsight Systems, Nsight Compute, or a framework profiler to distinguish compute,
-memory, and stall causes accurately. A practical workflow first confirms a gap
-with throughput or MFU, uses a timeline to find waiting intervals, and only then
-drills into individual kernels. Do not optimize around one utilization number.
-
-## Communication Between GPUs
-
-Effective GPU communication performance depends on the **physical link,
-topological distance, message size, and collective algorithm**. NCCL reads the
-system topology and selects paths for AllReduce, AllGather, ReduceScatter, and
-other collectives. Automatic selection cannot repair incorrect wiring, disabled
-P2P, or a poor GPU allocation.
-
-Inspect the machine instead of inferring topology from GPU indices:
-
-```bash
-nvidia-smi topo -m
-nvidia-smi topo -p2p r
-```
-
-Common GPU-to-GPU labels in `topo -m` include `NV#` for NVLink paths, `PIX` for
-devices under one PCIe switch, `PXB` for paths through multiple PCIe bridges,
-`NODE` for paths within one NUMA node, and `SYS` for paths across NUMA nodes or
-CPU sockets. Labels vary with hardware and driver versions, so use the output
-from the actual machine.
+Command-line tools can inspect the machine topology instead of guessing from GPU numbering. Common GPU-to-GPU identifiers 
+in the topology output include `NV#` (through N NVLinks), `PIX` (same PCIe switch), `PXB` (through multiple PCIe bridges), 
+`NODE` (same NUMA node), and `SYS` (cross-NUMA/socket). Specific identifiers vary with driver and hardware versions; 
+use the current machine output as reference.
 
 ### NVLink
 
-NVLink is a high-speed point-to-point GPU interconnect. NVSwitch connects
-multiple GPUs through a switching fabric, allowing GPUs in one NVSwitch domain
-to use high-bandwidth, low-latency paths. These links are particularly valuable
-for tensor parallelism (TP), which communicates frequently and is sensitive to
-both latency and bandwidth.
+NVLink is high-speed point-to-point interconnect between GPUs. NVSwitch connects multiple GPUs into a switching fabric, enabling high-bandwidth, low-latency interconnection within an NVSwitch domain. They suit tensor parallelism (TP) and other workloads with frequent communication and sensitivity to both latency and bandwidth.
 
-Keep three concepts separate:
+Three concepts to distinguish:
 
-- **NVLink generation and link count** determine the theoretical per-link and
-  aggregate peak bandwidth.
-- **NVSwitch domain membership** determines whether GPU pairs have equivalent
-  high-speed paths.
-- **Measured NCCL bandwidth** includes the effects of the algorithm, message
-  size, and physical path; it is not the same as the advertised link peak.
+- **NVLink count and generation** determine single-link and aggregate theoretical peak;
+- **Whether in the same NVSwitch domain** determines if any GPU pair can take equivalent high-speed paths;
+- **NCCL measured bandwidth** is the result of algorithm, message size, and links combined, not directly equal to vendor-labeled link peak.
 
-Within one NVSwitch domain, GPU-to-GPU traffic may stay entirely on NVSwitch
-even when the GPUs are attached to different CPU NUMA nodes. NUMA then has
-little effect on that particular path. CPU-to-GPU and NIC-to-GPU paths remain
-sensitive to NUMA and PCIe affinity, so this does not make all NUMA placement
-irrelevant.
+Within the same NVSwitch domain, even if GPUs are under different CPU NUMA nodes, GPU-to-GPU data may transit entirely through NVSwitch, so NUMA has little impact on this path. However, CPU-to-GPU and NIC-to-GPU paths are still affected by NUMA/PCIe affinity, so NUMA configuration cannot be entirely ignored.
 
 ### PCIe
 
-PCIe is the general-purpose interconnect between GPUs, CPUs, NICs, and other
-devices. It can also carry GPU P2P traffic when the platform supports it. PCIe
-usually offers less bandwidth than NVLink and may traverse PCIe switches, host
-bridges, or inter-socket links.
+PCIe is the universal interconnect between GPU and CPU, NIC, and other devices, and can also carry GPU P2P when the platform supports it. Compared to NVLink, it typically has lower bandwidth, more topology layers, and may traverse PCIe switches, Host Bridges, or cross-CPU socket links.
 
-A typical path hierarchy from best to worst is:
+Common paths from best to worst roughly:
 
 ![Direct NVLink communication compared with host-staged PCIe fallback](../../.asset/gpu/gpu-interconnect-paths.drawio.svg)
 
 ```text
-NVLink/NVSwitch within one fabric domain
-	→ GPU P2P under one PCIe switch
-	→ Host Bridge within one NUMA node
-	→ Cross-socket path
-	→ GPU → CPU memory → GPU P2P fallback
+Same-domain NVLink/NVSwitch
+  → GPU P2P on same PCIe switch
+  → Same NUMA node via Host Bridge
+  → Cross CPU socket
+  → GPU → CPU memory → GPU P2P fallback
 ```
 
-PCIe P2P availability depends on the GPUs, motherboard topology, IOMMU/ACS, and
-driver configuration. If P2P is unavailable or disabled with
-`NCCL_P2P_DISABLE=1`, data may be staged through CPU memory, adding two PCIe
-transfers and an extra copy. Across nodes, GPUDirect RDMA allows the NIC to
-access GPU memory directly. In that case, prefer a NIC under the same PCIe
-switch or NUMA node as the GPU.
+Whether PCIe P2P is available depends on GPU, motherboard topology, IOMMU/ACS, and driver configuration. When P2P is 
+unavailable or disabled, data may need to stage through CPU memory, incurring two PCIe transfers and extra copying. 
+Cross-node GPUDirect RDMA allows NICs to directly access GPU memory, reducing CPU memory staging; in this case, 
+prioritize GPUs using NICs on the same PCIe switch or same NUMA node.
 
-### Measuring Communication Performance
+### How to Measure Communication Performance
 
-A communication benchmark must fix the GPU pair or group, message size,
-collective, and NCCL configuration. `all_reduce_perf` from `nccl-tests` usually
-reports two bandwidth values:
+Communication tests must fix GPU combination, message size, collective operation, and NCCL configuration. Common test 
+tools report:
 
-- `algbw`: algorithm bandwidth calculated from payload size and operation time;
-- `busbw`: bandwidth normalized by the data movement required by the
-  collective, useful for estimating physical path utilization.
+- `algbw`: algorithmic bandwidth calculated from data volume and operation time;
+- `busbw`: bus bandwidth scaled by the actual transfer volume of the collective, suitable for comparing hardware path utilization.
 
-For Ring AllReduce with $N$ ranks, NCCL uses this conversion:
+For Ring AllReduce with $N$ ranks, NCCL uses the scaling:
 
 $$
 \mathrm{busbw} = \mathrm{algbw} \times \frac{2(N-1)}{N}
 $$
 
-Startup latency dominates small messages; large messages gradually approach
-the link's bandwidth ceiling. Do not compare topologies with only one small
-tensor. Establish a baseline inside one NVLink domain, then test cross-domain
-or cross-NUMA GPU groups. Use `NCCL_DEBUG=INFO` to confirm whether NCCL selected
-P2P, SHM, IB, or Socket transport.
+Small messages are dominated by launch latency; large messages gradually approach link bandwidth. Therefore, comparing 
+two topologies cannot rely on testing a very small tensor. Establish a baseline with same-NVLink-domain first, then 
+test cross-domain or cross-NUMA GPU pairs, and confirm the actual communication path NCCL selects (P2P, SHM, IB, or Socket).
 
 ## GPU Scheduling
 
 ### Scheduling Problems
 
-The default Kubernetes scheduler treats `nvidia.com/gpu` as an indivisible
-scalar extended resource. It can determine that a node has four free GPUs, but
-not whether those GPUs communicate over NVLink or PCIe, nor whether every
-worker of a distributed job must start together. This creates several common
-problems:
+Kubernetes treats `nvidia.com/gpu` as an indivisible scalar extended resource by default. It can determine if a node has 4 GPUs left, but doesn't know if those 4 GPUs are connected via NVLink or PCIe, nor if all workers of a distributed job must start simultaneously. This produces several typical problems:
 
-1. **Resource fragmentation:** single-GPU jobs can leave enough free GPUs in
-   total but no suitable group for TP. Consecutive indices do not matter; a
-   shared high-speed interconnect domain does.
-2. **Topology-unaware placement:** a schedulable allocation is not necessarily
-   a performant one. Crossing NVSwitch domains or CPU sockets, or binding a
-   remote NIC, can force communication onto a slower path.
-3. **Missing Gang Scheduling:** distributed training needs every rank online.
-   If only some workers start, they reserve GPUs while waiting for NCCL
-   initialization.
-4. **Conflicting training and inference goals:** single-GPU inference favors
-   tight packing, while multi-GPU training benefits from preserving complete
-   high-speed fabric domains. Mixed clusters need quotas, priorities, or
-   dedicated node pools to control fragmentation.
+1. **Resource fragmentation**: After single-GPU tasks scatter across GPUs, the remaining count may be sufficient but cannot form a GPU group meeting TP communication requirements. The key isn't whether numbering is consecutive, but whether remaining GPUs are in the same high-speed interconnect domain.
+2. **Topology-unaware**: Scheduling success doesn't equal reasonable performance. Cross-NVSwitch domain, cross-socket, or binding to distant NICs can all cause communication to fall back to slower paths.
+3. **Missing Gang Scheduling**: Distributed training requires all ranks ready. If only partial workers are scheduled, already-started workers hold GPUs waiting for NCCL initialization, forming resource idling.
+4. **Training vs inference goal conflict**: Single-GPU inference prefers higher packing density; multi-GPU training prefers preserving complete high-speed interconnect domains. When both workload types share deployment, quotas, priorities, or dedicated node pools are needed to control fragmentation.
 
-Mitigations include topology-aware Filter and Score plugins, coscheduling with
-systems such as Volcano, queues and priorities, preemption or rescheduling of
-low-priority jobs, and node pools aligned with NVSwitch domains. Gang
-Scheduling answers whether all Pods can run together; topology-aware scheduling
-answers where they should run. Neither replaces the other.
+Corresponding governance includes topology-aware Filter/Score, Gang Scheduling/coscheduling from schedulers like Volcano, queues and priorities, low-priority task preemption/rescheduling, and partitioning node pools by NVSwitch domain. Gang Scheduling solves "can all Pods run together", topology-awareness solves "where they run"; the two cannot replace each other.
 
 ### Topology Awareness
 
-Topology-aware scheduling operates at three levels:
+Topology-aware scheduling divides into three layers:
 
 ![Topology-aware scheduling from workload intent to GPU placement](../../.asset/gpu/gpu-topology-scheduling.drawio.svg)
 
-| Level | What the scheduler must preserve | Typical workload | Common policy |
+| Layer | What the scheduler must ensure | Applicable scenario | Common strategy |
 | --- | --- | --- | --- |
-| GPU fabric | Place a TP group in one NVLink/NVSwitch domain | TP and frequent collectives | Hard Filter constraint plus topology Score |
-| CPU/memory NUMA | Keep CPU, memory, GPU, and NIC near one another | DataLoader, H2D, and GPUDirect RDMA traffic | Kubelet Topology Manager |
-| Node/network | Keep TP within a node and map DP onto suitable IB/RoCE links | Multi-node hybrid parallelism | PodGroup, node affinity, and rank mapping |
+| GPU fabric | TP groups prioritize same NVLink/NVSwitch domain | TP, frequent collectives | Hard constraint Filter, plus topology Score |
+| CPU/memory NUMA | CPU, memory, GPU, and NIC prefer same NUMA node | DataLoader, H2D, GPUDirect RDMA | Kubelet Topology Manager |
+| Node/network | TP groups don't cross nodes; DP groups use suitable IB/RoCE network | Multi-node hybrid parallelism | PodGroup, node affinity, and rank mapping |
 
-Parallelism strategies differ in topology sensitivity:
+Three parallelism types have different topology sensitivity:
 
-- **Tensor parallelism (TP)** may communicate at every layer. Keep a TP group
-  within one node and one NVSwitch domain whenever possible.
-- **Pipeline parallelism (PP)** communicates mainly at stage boundaries and can
-  trade interconnect performance against memory capacity.
-- **Data parallelism (DP)** commonly synchronizes gradients across nodes. Its
-  priorities are IB/RoCE bandwidth, NIC affinity, and overlap between
-  communication and backward computation.
+- **Tensor parallelism (TP)**: may communicate every layer; should place a TP group on same node, same NVSwitch domain;
+- **Pipeline parallelism (PP)**: mainly communicates at stage boundaries; can trade off bandwidth vs memory capacity;
+- **Data parallelism (DP)**: naturally does gradient sync across nodes; focus is IB/RoCE bandwidth, NIC affinity, and overlapping communication with backward compute.
 
-Kubelet's Topology Manager coordinates NUMA hints from CPU Manager, Memory
-Manager, and Device Plugins. Choose policy strength for the workload. Ordinary
-inference can use `best-effort`; training sensitive to H2D or RDMA traffic may
-use `restricted`. `single-numa-node` is the strictest policy but can leave a Pod
-pending when one NUMA node lacks enough local resources. If a single NVSwitch
-domain already fully connects the GPUs, do not sacrifice schedulability merely
-to align GPU-to-GPU traffic with CPU NUMA boundaries.
+Kubelet's Topology Manager can coordinate NUMA hints from CPU Manager, Memory Manager, and Device Plugin. Policy 
+strictness should match workload: regular inference can use relaxed policy; training sensitive to H2D or RDMA can 
+consider strict policy; the strictest single-NUMA-node policy ensures optimal affinity but more easily blocks Pod 
+scheduling due to local resource shortage. When GPU-to-GPU is already fully connected through a single NVSwitch domain, 
+don't sacrifice schedulability for NUMA alignment unnecessarily.
 
-Validate every scheduling policy with the real workload. Record allocated GPU
-UUIDs, save `nvidia-smi topo -m`, benchmark the assigned GPU group with NCCL,
-and compare end-to-end tokens/s or samples/s. A topology policy succeeds only
-when the job is schedulable, the communication path is correct, and total
-throughput improves.
+Scheduling policies must ultimately be validated with actual workloads: record assigned GPU UUIDs, save topology 
+information, run NCCL benchmarks for the corresponding GPU combination, and compare end-to-end tokens/s or samples/s. 
+Only when **schedulable, correct communication path, and overall throughput improvement** are all met is the topology 
+strategy truly effective.
+
+## GPU Sharing Scheduling
+
+Kubernetes allocates GPUs as whole-card resources by default. This ensures performance isolation in training scenarios but wastes resources in inference, development/debugging, or small-scale tasks. GPU sharing scheduling allows multiple containers or processes to share one GPU, improving utilization while requiring trade-offs among isolation, QoS, and scheduling complexity.
+
+### Why GPU Sharing is Needed
+
+| Scenario | Problem | Value of sharing |
+| --- | --- | --- |
+| Inference services | Single model inference typically doesn't fill a whole GPU but still monopolizes one | Multiple inference services share, improving throughput and utilization |
+| Development/debugging | Developers need GPU environment but not full compute power | Multiple dev containers share, reducing wait time |
+| Small-scale training/fine-tuning | Small models or small batch training use little memory and compute | Multiple training tasks share, accelerating experiment iteration |
+| Heterogeneous workloads | Training, inference, data processing mixed deployment | Allocate compute and memory on demand, improving overall cluster efficiency |
+
+Whole-card scheduling suits large-scale training and online inference with strict latency/throughput requirements; GPU sharing suits scenarios with unsaturated resource needs or tolerance for some performance variation. The two aren't replacements but complements for different workloads.
+
+### Technical Implementations of GPU Sharing
+
+GPU sharing can be implemented at **hardware, driver, runtime, and scheduler** levels, with different capabilities and costs:
+
+![GPU sharing methods from time-slicing to hardware partitioning](../../.asset/gpu/gpu-sharing-methods.drawio.svg)
+
+#### 1. Time-Slicing
+
+NVIDIA GPU driver supports time-slice scheduling among multiple CUDA contexts. Tasks from multiple processes submitted to the same GPU are serialized, with the OS or driver switching by time slice.
+
+- **Pros**: No application modification needed, transparent to any CUDA program; simple configuration.
+- **Cons**: No hardware isolation, processes interfere with each other; OOM when memory oversubscribed; no QoS guarantee; context switch brings latency jitter.
+- **Implementation**: Device Plugin configuration virtualizes physical GPU into multiple logical GPUs; scheduler can assign multiple Pods to the same physical card.
+- **Applicable scenarios**: Dev/test, low-load inference, batch tasks tolerant of jitter.
+
+#### 2. MPS (Multi-Process Service)
+
+MPS is a runtime-layer sharing solution provided by NVIDIA. It starts an MPS server; multiple client processes connect to the same CUDA context through MPS client. MPS spatially multiplexes kernels from different processes on SMs and memory, rather than simple time-slicing.
+
+![MPS architecture showing space multiplexing vs context switching](../../.asset/gpu/mps-architecture.drawio.svg)
+
+##### How MPS Works
+
+Under the traditional CUDA model, each process creates an independent CUDA context. When multiple processes use the GPU simultaneously:
+
+- GPU performs **time-slice switching** (context switch) between different contexts;
+- Each switch must save/restore registers, TLB, cache state, incurring significant overhead (microseconds to milliseconds);
+- Even if multiple processes' kernels are all small (can't fill the GPU), they can't execute concurrently at the same moment.
+
+MPS changes this model by introducing an intermediate layer:
+
+```text
+Traditional model:
+Process A → CUDA Context A ┐
+Process B → CUDA Context B ├─→ GPU (time-slicing)
+Process C → CUDA Context C ┘
+
+MPS model:
+Process A → MPS Client A ┐
+Process B → MPS Client B ├─→ MPS Server → Single CUDA Context → GPU (space multiplexing)
+Process C → MPS Client C ┘
+```
+
+**MPS Server** maintains a shared CUDA context; all client processes submit work through MPS Client (a stub library). MPS Server will:
+
+1. **Merge submissions**: Submit kernels from different clients to the same CUDA stream queue;
+2. **Space multiplexing**: Multiple small kernels can execute simultaneously on different SMs, rather than queuing;
+3. **Reduce switching**: Avoid frequent context switches, lowering scheduling latency.
+
+##### Performance Characteristics
+
+| Dimension | Without MPS | With MPS | Explanation |
+| --- | --- | --- | --- |
+| Kernel launch latency | ~10-50 μs | ~1-5 μs | Reduced context switch overhead |
+| Small kernel concurrency | Serial execution | Concurrent | Kernels from multiple processes can occupy different SMs simultaneously |
+| Memory usage | Each process independent | Shared visible | No memory isolation between processes |
+| Error isolation | Process-level isolation | No isolation | One process's GPU error affects all clients |
+
+**Typical benefit scenarios**:
+
+- **Inference services**: Single inference request batch small (e.g. batch=1), can't fill GPU. Through MPS, kernels from 10 concurrent inference processes can execute simultaneously, throughput improves 3-8×.
+- **Small-scale training**: Multiple users training small models simultaneously, each model uses <20% compute. MPS lets them share GPU rather than queuing.
+- **Pipeline parallelism**: One process handles embedding lookup, another handles transformer layers. MPS lets kernels from both stages run concurrently, reducing bubbles.
+
+**Inapplicable scenarios**:
+
+- Single process already fills GPU (e.g. large batch training)—MPS can't further improve, only adds overhead;
+- Scenarios requiring hardware-level isolation or QoS guarantees—MPS can't limit a process's compute or memory usage.
+
+##### Deployment
+
+MPS requires starting an MPS daemon in the system as an intermediate layer. Client processes need no code modification; CUDA runtime automatically connects to MPS through environment variables. In Kubernetes, Device Plugin or DaemonSet typically starts MPS Server automatically for each GPU; Pods connect to MPS daemon through environment variables.
+
+##### Limitations and Considerations
+
+1. **Memory visibility**: All client processes can see each other's allocated memory addresses. A malicious or buggy process can read/write other processes' memory, causing data corruption or security issues. Production environments need to ensure processes are from trusted sources.
+
+2. **No resource quotas**: MPS doesn't provide memory or compute quota mechanisms. A process can allocate all memory or continuously occupy all SMs, causing other processes to OOM or starve. Resource usage must be controlled at the application layer.
+
+3. **Error propagation**: A GPU error triggered by one process (e.g. illegal memory access, kernel timeout) causes the entire MPS Server to reset, failing GPU operations for all client processes. Suitable for multiple replicas of the same application, not for multi-tenant scenarios.
+
+4. **Version and compatibility**:
+   - Pre-Volta GPUs (e.g. Pascal): MPS can only time-slice, doesn't support true spatial concurrency;
+   - Volta and later (V100/A100/H100): Support Volta MPS, allowing kernels from multiple processes to truly execute concurrently on different SMs;
+   - CUDA version needs ≥ 7.0; recommend latest driver for best performance.
+
+5. **Streams and priorities**: MPS merges all clients' streams into an internal queue. Client-specified stream priorities may not be fully preserved. Latency-sensitive applications should verify P99 latency.
+
+##### Monitoring and Tuning
+
+MPS itself doesn't provide fine-grained per-client GPU usage statistics. Need to trace each client's behavior through DCGM or Nsight Systems combined with process PID.
+
+**Performance tuning recommendations**:
+
+- **Process count**: Sharing a GPU among 4-8 processes usually works best. Too many processes cause scheduling overhead to rise; too few can't fully utilize spatial concurrency.
+- **Kernel size**: MPS benefits small to medium kernels significantly (execution time <1ms). Large kernels (already fill GPU) can't run concurrently; MPS degrades to queued execution.
+- **Memory allocation**: Allocate required memory at process startup, avoid frequent malloc/free at runtime. Memory fragmentation affects all clients.
+- **Error handling**: Implement GPU error detection and restart mechanisms at the application layer, avoiding one process's error affecting the entire MPS Server long-term.
+
+**Comparison with Time-Slicing**:
+
+| Feature | Time-Slicing | MPS |
+| --- | --- | --- |
+| Implementation level | Driver scheduling | User-space daemon |
+| Kernel concurrency | No (serial) | Yes (Volta+ supports spatial concurrency) |
+| Context switching | Frequent | None (shared context) |
+| Launch latency | 10-50 μs | 1-5 μs |
+| Configuration complexity | Low | Medium (need to start MPS daemon) |
+| Isolation | Process isolation | No isolation |
+
+Summary: MPS is an effective means to improve GPU utilization in **trusted environments**. It suits multiple replicas of the same application or small-scale multi-user development environments, not multi-tenant production environments requiring strong isolation. For the latter, use MIG.
+
+**Applicable scenarios**: Inference services, small-scale parallel tasks, multiple stages sharing GPU in a pipeline, dev/test environments.
+
+#### 3. MIG (Multi-Instance GPU)
+
+MIG is hardware-level partitioning capability provided by A100/H100 and later Ampere-generation architectures. It partitions a physical GPU into multiple GPU Instances (GI), each GI has independent SMs, memory, memory controllers, and cache, completely isolated from each other.
+
+![MIG hardware partitioning with complete isolation](../../.asset/gpu/mig-architecture.drawio.svg)
+
+- **Pros**: Hardware-level isolation, faults and OOM don't affect across instances; each instance has clear compute and memory limits; supports error isolation and QoS guarantees.
+- **Cons**: Only supports specific GPU models; partition configurations fixed (e.g. 1g.5gb, 2g.10gb, 3g.20gb), can't fine-tune on demand; switching MIG configuration requires GPU reset; not suitable for training tasks needing large memory or full compute.
+- **Implementation**: Enable MIG mode via nvidia-smi and create GPU Instances; Kubernetes exposes different MIG instance sizes through different resource names (e.g. `nvidia.com/mig-1g.5gb`).
+- **Applicable scenarios**: Multi-tenant inference clusters, production environments needing hardware isolation, SLA-sensitive services.
+
+#### 4. vGPU (Virtual GPU)
+
+vGPU is a virtualization solution provided by NVIDIA vGPU software, mainly for virtual machine scenarios. Hypervisor partitions a physical GPU into multiple virtual GPUs; each VM sees an independent GPU device.
+
+- **Pros**: VM-level isolation; supports dynamic migration and resource adjustment; suitable for VDI and multi-tenant cloud scenarios.
+- **Cons**: Requires commercial license; performance overhead higher than bare metal; mainly for VMs, container scenarios typically use MIG or MPS.
+
+**Applicable scenarios**: VM-based GPU cloud, VDI, compliance scenarios needing VM isolation.
+
+### GPU Sharing Schedulers in Kubernetes
+
+Beyond the above underlying technologies, scheduler-level support is also needed to let multiple Pods reasonably share GPUs and avoid oversubscription.
+
+![GPU sharing architecture from workload to hardware](../../.asset/gpu/gpu-sharing-architecture.drawio.svg)
+
+#### GPUShare (Alibaba Cloud/NVIDIA)
+
+GPUShare implements fine-grained allocation of memory and compute through extended scheduler:
+
+- Pods can request specific memory sizes (e.g. 4GB) rather than whole cards;
+- Scheduler tallies each GPU's remaining memory and ensures no oversubscription;
+- Injects memory limits through environment variables; applications need to cooperate to limit memory usage.
+
+**Pros**: Memory-aware, avoids OOM; doesn't need MIG hardware support.  
+**Cons**: Needs application cooperation to limit memory; no hardware isolation, compute can still contend; needs to replace default scheduler.
+
+#### Volcano
+
+Volcano is a CNCF batch scheduling project supporting Gang Scheduling and GPU topology awareness. In GPU sharing scenarios, it can work with Device Plugin to achieve:
+
+- Coscheduling of multiple Pods sharing GPU;
+- Managing GPU resource quotas by priority and queue;
+- Combined with MPS/MIG, supports multi-tenant isolation.
+
+#### GPU Operator + Time-Slicing
+
+NVIDIA GPU Operator uniformly manages drivers, Device Plugin, and monitoring components. Through configuration, 
+Time-Slicing can be quickly enabled for existing clusters.
+
+### Best Practices
+
+| Scenario | Recommended solution | Reason |
+| --- | --- | --- |
+| Production inference, needs SLA guarantees | MIG | Hardware isolation, fault containment, QoS controllable |
+| Dev/test environment | Time-Slicing | Simple configuration, fully improves packing density |
+| Small model inference, tolerates jitter | MPS | Better performance than Time-Slicing, suits kernel concurrency |
+| Memory-constrained multi-task scenario | GPUShare (memory isolation) + MPS | Avoid OOM while improving compute utilization |
+| Large-scale training | Don't share, use whole card + Gang Scheduling | Ensure performance and topology, avoid communication jitter |
+
+**Monitoring and tuning**:
+
+- Use DCGM or Prometheus to monitor each GPU's memory usage, SM utilization, and power;
+- Compare throughput and P99 latency before/after sharing, confirm QoS acceptable;
+- Time-Slicing replica count shouldn't be set too high, or context switch overhead negates gains;
+- MIG partition scheme should match actual workload, prioritize using all GIs to avoid resource waste;
+- Training and inference should separate to different node pools or use priority preemption, avoiding mutual interference.
+
+GPU sharing isn't a "free" way to improve utilization. It introduces weakened isolation, performance jitter, and increased scheduling complexity. Only with clear scenarios, right technology choice, and continuous monitoring can a balance between utilization and stability be found.
 
 ## References
 

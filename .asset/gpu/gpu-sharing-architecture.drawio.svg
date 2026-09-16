@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" role="img" aria-labelledby="title desc">
+  <title id="title">GPU sharing architecture layers</title>
+  <desc id="desc">GPU sharing implementations from application layer through scheduler, runtime, driver to hardware.</desc>
+  <rect width="1200" height="700" fill="#F5F5F7"/>
+  <g font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif">
+    <text x="50" y="58" fill="#1D1D1F" font-size="32" font-weight="600">GPU Sharing Architecture</text>
+    <text x="50" y="88" fill="#6E6E73" font-size="16">Implementation layers from workload to hardware</text>
+
+    <!-- Left: Stack -->
+    <rect x="60" y="130" width="480" height="520" rx="12" fill="#FFFFFF" stroke="#D2D2D7"/>
+
+    <!-- Application Layer -->
+    <rect x="90" y="160" width="420" height="70" rx="8" fill="#F5F5F7" stroke="#E5E5EA"/>
+    <text x="300" y="185" fill="#1D1D1F" font-size="18" font-weight="600" text-anchor="middle">Application / Workload</text>
+    <g>
+      <rect x="110" y="200" width="120" height="20" rx="4" fill="#FF9500"/>
+      <text x="170" y="215" fill="#FFFFFF" font-size="11" font-weight="600" text-anchor="middle">Inference Service</text>
+    </g>
+    <g>
+      <rect x="240" y="200" width="120" height="20" rx="4" fill="#0071E3"/>
+      <text x="300" y="215" fill="#FFFFFF" font-size="11" font-weight="600" text-anchor="middle">Training Job</text>
+    </g>
+    <g>
+      <rect x="370" y="200" width="120" height="20" rx="4" fill="#34C759"/>
+      <text x="430" y="215" fill="#FFFFFF" font-size="11" font-weight="600" text-anchor="middle">Dev Container</text>
+    </g>
+
+    <path d="M300 230 V250" stroke="#86868B" stroke-width="2" stroke-dasharray="5 3"/>
+
+    <!-- Scheduler Layer -->
+    <rect x="90" y="250" width="420" height="80" rx="8" fill="#E8F2FF" stroke="#0071E3"/>
+    <text x="300" y="275" fill="#1D1D1F" font-size="18" font-weight="600" text-anchor="middle">Scheduler Layer</text>
+    <text x="300" y="295" fill="#6E6E73" font-size="13" text-anchor="middle">Kubernetes Scheduler + Device Plugin</text>
+    <rect x="110" y="305" width="110" height="18" rx="4" fill="#0071E3"/>
+    <text x="165" y="318" fill="#FFFFFF" font-size="10" font-weight="600" text-anchor="middle">GPUShare</text>
+    <rect x="230" y="305" width="70" height="18" rx="4" fill="#0071E3"/>
+    <text x="265" y="318" fill="#FFFFFF" font-size="10" font-weight="600" text-anchor="middle">Volcano</text>
+    <rect x="310" y="305" width="90" height="18" rx="4" fill="#0071E3"/>
+    <text x="355" y="318" fill="#FFFFFF" font-size="10" font-weight="600" text-anchor="middle">GPU Operator</text>
+    <text x="470" y="318" fill="#0071E3" font-size="10" font-weight="600">Memory-aware</text>
+
+    <path d="M300 330 V350" stroke="#86868B" stroke-width="2" stroke-dasharray="5 3"/>
+
+    <!-- Runtime Layer -->
+    <rect x="90" y="350" width="420" height="80" rx="8" fill="#FFF3E0" stroke="#FF9500"/>
+    <text x="300" y="375" fill="#1D1D1F" font-size="18" font-weight="600" text-anchor="middle">Runtime Layer</text>
+    <text x="300" y="395" fill="#6E6E73" font-size="13" text-anchor="middle">Container Runtime + CUDA Runtime</text>
+    <rect x="130" y="405" width="80" height="18" rx="4" fill="#FF9500"/>
+    <text x="170" y="418" fill="#FFFFFF" font-size="10" font-weight="600" text-anchor="middle">MPS Server</text>
+    <rect x="220" y="405" width="160" height="18" rx="4" fill="#FF9500"/>
+    <text x="300" y="418" fill="#FFFFFF" font-size="10" font-weight="600" text-anchor="middle">CUDA_VISIBLE_DEVICES</text>
+
+    <path d="M300 430 V450" stroke="#86868B" stroke-width="2" stroke-dasharray="5 3"/>
+
+    <!-- Driver Layer -->
+    <rect x="90" y="450" width="420" height="80" rx="8" fill="#E8F5E9" stroke="#34C759"/>
+    <text x="300" y="475" fill="#1D1D1F" font-size="18" font-weight="600" text-anchor="middle">Driver Layer</text>
+    <text x="300" y="495" fill="#6E6E73" font-size="13" text-anchor="middle">NVIDIA GPU Driver</text>
+    <rect x="110" y="505" width="110" height="18" rx="4" fill="#34C759"/>
+    <text x="165" y="518" fill="#FFFFFF" font-size="10" font-weight="600" text-anchor="middle">Context Scheduling</text>
+    <rect x="230" y="505" width="100" height="18" rx="4" fill="#34C759"/>
+    <text x="280" y="518" fill="#FFFFFF" font-size="10" font-weight="600" text-anchor="middle">Time-Slicing</text>
+    <rect x="340" y="505" width="100" height="18" rx="4" fill="#34C759"/>
+    <text x="390" y="518" fill="#FFFFFF" font-size="10" font-weight="600" text-anchor="middle">Memory Mgmt</text>
+
+    <path d="M300 530 V550" stroke="#86868B" stroke-width="2" stroke-dasharray="5 3"/>
+
+    <!-- Hardware Layer -->
+    <rect x="90" y="550" width="420" height="80" rx="8" fill="#1D1D1F"/>
+    <text x="300" y="575" fill="#FFFFFF" font-size="18" font-weight="600" text-anchor="middle">Hardware Layer</text>
+    <text x="300" y="595" fill="#AEAEB2" font-size="13" text-anchor="middle">Physical GPU</text>
+    <rect x="150" y="605" width="100" height="18" rx="4" fill="#5E5CE6"/>
+    <text x="200" y="618" fill="#FFFFFF" font-size="10" font-weight="600" text-anchor="middle">MIG Slicing</text>
+    <rect x="260" y="605" width="140" height="18" rx="4" fill="#5E5CE6"/>
+    <text x="330" y="618" fill="#FFFFFF" font-size="10" font-weight="600" text-anchor="middle">SM • Memory • Cache</text>
+
+    <!-- Right: Implementation Mapping -->
+    <rect x="580" y="130" width="560" height="520" rx="12" fill="#FFFFFF" stroke="#D2D2D7"/>
+    <text x="860" y="165" fill="#1D1D1F" font-size="20" font-weight="600" text-anchor="middle">Implementation Mapping</text>
+
+    <!-- Time-Slicing -->
+    <rect x="610" y="190" width="250" height="100" rx="8" fill="#F5F5F7" stroke="#E5E5EA"/>
+    <text x="735" y="215" fill="#1D1D1F" font-size="16" font-weight="600" text-anchor="middle">Time-Slicing</text>
+    <circle cx="635" cy="237" r="6" fill="#34C759"/>
+    <text x="650" y="242" fill="#1D1D1F" font-size="13">Driver: context switch</text>
+    <circle cx="635" cy="262" r="6" fill="#0071E3"/>
+    <text x="650" y="267" fill="#1D1D1F" font-size="13">Scheduler: replica × N</text>
+    <text x="735" y="282" fill="#6E6E73" font-size="11" text-anchor="middle">nvidia.com/gpu replicas: 4</text>
+
+    <!-- MPS -->
+    <rect x="880" y="190" width="250" height="100" rx="8" fill="#F5F5F7" stroke="#E5E5EA"/>
+    <text x="1005" y="215" fill="#1D1D1F" font-size="16" font-weight="600" text-anchor="middle">MPS</text>
+    <circle cx="905" cy="237" r="6" fill="#FF9500"/>
+    <text x="920" y="242" fill="#1D1D1F" font-size="13">Runtime: MPS daemon</text>
+    <circle cx="905" cy="262" r="6" fill="#34C759"/>
+    <text x="920" y="267" fill="#1D1D1F" font-size="13">Driver: shared context</text>
+    <text x="1005" y="282" fill="#6E6E73" font-size="11" text-anchor="middle">Concurrent kernel execution</text>
+
+    <!-- MIG -->
+    <rect x="610" y="310" width="250" height="100" rx="8" fill="#F5F5F7" stroke="#E5E5EA"/>
+    <text x="735" y="335" fill="#1D1D1F" font-size="16" font-weight="600" text-anchor="middle">MIG</text>
+    <circle cx="635" cy="357" r="6" fill="#5E5CE6"/>
+    <text x="650" y="362" fill="#1D1D1F" font-size="13">Hardware: partition GPU</text>
+    <circle cx="635" cy="382" r="6" fill="#0071E3"/>
+    <text x="650" y="387" fill="#1D1D1F" font-size="13">Scheduler: GI as resource</text>
+    <text x="735" y="402" fill="#6E6E73" font-size="11" text-anchor="middle">nvidia.com/mig-1g.5gb: 1</text>
+
+    <!-- vGPU -->
+    <rect x="880" y="310" width="250" height="100" rx="8" fill="#F5F5F7" stroke="#E5E5EA"/>
+    <text x="1005" y="335" fill="#1D1D1F" font-size="16" font-weight="600" text-anchor="middle">vGPU</text>
+    <circle cx="905" cy="357" r="6" fill="#5E5CE6"/>
+    <text x="920" y="362" fill="#1D1D1F" font-size="13">Hardware: virtualization</text>
+    <circle cx="905" cy="382" r="6" fill="#34C759"/>
+    <text x="920" y="387" fill="#1D1D1F" font-size="13">Driver: hypervisor mediated</text>
+    <text x="1005" y="402" fill="#6E6E73" font-size="11" text-anchor="middle">VM-level isolation</text>
+
+    <!-- Decision Flow -->
+    <rect x="610" y="430" width="520" height="200" rx="8" fill="#E8F2FF" stroke="#0071E3"/>
+    <text x="870" y="460" fill="#1D1D1F" font-size="18" font-weight="600" text-anchor="middle">Selection Guide</text>
+
+    <rect x="640" y="480" width="460" height="45" rx="6" fill="#FFFFFF" stroke="#E5E5EA"/>
+    <text x="660" y="503" fill="#1D1D1F" font-size="14" font-weight="600">Need hardware isolation?</text>
+    <text x="1070" y="503" fill="#0071E3" font-size="13" font-weight="600" text-anchor="end">Yes → MIG or vGPU</text>
+
+    <rect x="640" y="535" width="460" height="45" rx="6" fill="#FFFFFF" stroke="#E5E5EA"/>
+    <text x="660" y="558" fill="#1D1D1F" font-size="14" font-weight="600">Multiple small kernels?</text>
+    <text x="1070" y="558" fill="#0071E3" font-size="13" font-weight="600" text-anchor="end">Yes → MPS</text>
+
+    <rect x="640" y="590" width="460" height="30" rx="6" fill="#FFFFFF" stroke="#E5E5EA"/>
+    <text x="660" y="611" fill="#1D1D1F" font-size="14" font-weight="600">Simple dev/test?</text>
+    <text x="1070" y="611" fill="#0071E3" font-size="13" font-weight="600" text-anchor="end">Yes → Time-Slicing</text>
+  </g>
+</svg>
