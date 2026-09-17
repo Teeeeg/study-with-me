@@ -171,4 +171,17 @@
   <text x="400" y="462" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#6E6E73">
     注：LLaMA-2 70B 实际配置。num_kv_heads = 8，num_q_heads / num_kv_heads = 8:1。数值可由 kv_cache_calc.py 复现。
   </text>
+  <style id="editorial-diagram-style">
+    text { font-family: Helvetica Neue, Segoe UI, sans-serif; letter-spacing: 0; }
+    text[font-weight="700"] { font-weight: 800; }
+    rect { rx: 3px; }
+    [fill="#F5F5F7" i] { fill: #FFFFFF !important; }
+    [fill="#0071E3" i] { fill: #5367C7 !important; }
+    [fill="#FF9F0A" i] { fill: #A64CC7 !important; }
+    [fill="#34C759" i] { fill: #2D8C64 !important; }
+    [fill="#EAF3FC" i] { fill: #DDE0F1 !important; }
+    [fill="#FFF4E5" i] { fill: #F2E6D8 !important; }
+    [fill="#EAF8EE" i] { fill: #DCEBDF !important; }
+    [stroke="#D2D2D7" i], [stroke="#6E6E73" i], [stroke="#0071E3" i], [stroke="#FF9F0A" i], [stroke="#34C759" i] { stroke: #111111 !important; stroke-width: 2.5 !important; }
+  </style>
 </svg>

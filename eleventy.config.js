@@ -108,40 +108,6 @@ export default function (eleventyConfig) {
     return groups;
   });
 
-  eleventyConfig.addFilter(
-    "backlogGroups",
-    (backlog, lang, clusters = [], all = []) =>
-      (backlog ?? []).map((group) => {
-        let title;
-        if (group.dir) {
-          const cluster = clusters.find((c) => c.dir === group.dir);
-          title = cluster?.title?.[lang] ?? leafTitle(group.dir);
-        } else {
-          title = group.title?.[lang];
-        }
-
-        return {
-          title,
-          items: (group.items ?? []).map((item) => ({
-            status: item.status ?? "todo",
-            text: item[lang],
-            note: item.note?.[lang],
-            page: item.ref
-              ? all.find((p) => p.data.ref === item.ref && p.data.lang === lang)
-              : null,
-          })),
-        };
-      }),
-  );
-
-  eleventyConfig.addFilter("backlogStats", (backlog) => {
-    const items = (backlog ?? []).flatMap((group) => group.items ?? []);
-    return {
-      total: items.length,
-      done: items.filter((item) => item.status === "done").length,
-    };
-  });
-
   /**
    * Notes link to shared images with paths like `../../.asset/x.svg` so they
    * also render on GitHub. Eleventy emits each note as its own directory, which

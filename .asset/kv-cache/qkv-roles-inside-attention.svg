@@ -200,4 +200,20 @@
         fill="#8A4B00">K 和 V 会被后续<tspan font-weight="700">每一个</tspan>新 token 反复读取 → 缓存下来就能省掉重算；</text>
     <text x="428" y="602" text-anchor="middle" dominant-baseline="central" font-size="12"
         fill="#8A4B00">Q 每一步都是全新的，且<tspan font-weight="700">永远不会被回看</tspan> → 缓存它只是白白占显存。</text>
+    <style id="editorial-diagram-style">
+        text { font-family: Helvetica Neue, Segoe UI, sans-serif; letter-spacing: 0; }
+        text[font-weight="700"] { font-weight: 800; }
+        rect { rx: 3px; }
+        .flow { stroke: #111111 !important; stroke-width: 3 !important; }
+        marker path { fill: #111111 !important; }
+        [fill="#F5F5F7" i] { fill: #FFFFFF !important; }
+        [fill="#0071E3" i] { fill: #5367C7 !important; }
+        [fill="#FF9F0A" i] { fill: #A64CC7 !important; }
+        [fill="#34C759" i] { fill: #2D8C64 !important; }
+        [fill="#FF3B30" i] { fill: #A52A2A !important; }
+        [fill="#EAF3FC" i] { fill: #DDE0F1 !important; }
+        [fill="#FFF4E5" i] { fill: #F2E6D8 !important; }
+        [fill="#EAF8EE" i] { fill: #DCEBDF !important; }
+        [stroke="#D2D2D7" i], [stroke="#6E6E73" i], [stroke="#0071E3" i], [stroke="#FF9F0A" i], [stroke="#34C759" i] { stroke: #111111 !important; stroke-width: 2.5 !important; }
+    </style>
 </svg>

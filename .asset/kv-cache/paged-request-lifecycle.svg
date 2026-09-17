@@ -35,9 +35,9 @@
   <rect width="100%" height="100%" fill="#F5F5F7"/>
 
     <rect width="1200" height="760" fill="#F5F5F7" />
-    <text x="600" y="48" text-anchor="middle" class="title">一条请求如何穿过调度器、KV Cache 与 Worker</text>
-    <text x="600" y="78" text-anchor="middle" class="subtitle">每一轮都同时受 token budget 与 block budget
-        约束，执行完成后再决定下一步</text>
+    <text x="600" y="48" text-anchor="middle" class="title">一个 10-token 请求如何穿过 PagedAttention</text>
+    <text x="600" y="78" text-anchor="middle" class="subtitle">示例：block_size = 4，前 4 个 token 命中缓存；物理
+        block 不必连续</text>
 
     <rect x="45" y="108" width="1110" height="486" rx="8" class="panel" />
     <text x="72" y="142" class="heading">请求主路径</text>
@@ -50,7 +50,7 @@
         <text x="30" y="56" text-anchor="middle" class="inverse">1</text>
         <rect x="70" y="10" width="170" height="80" rx="7" class="input" />
         <text x="155" y="42" text-anchor="middle" class="label">请求到达</text>
-        <text x="155" y="65" text-anchor="middle" class="small">Tokenize · 长度未知</text>
+        <text x="155" y="65" text-anchor="middle" class="small">Prompt: token 0-9</text>
     </g>
 
     <path d="M316 224 H356" class="arrow" />
@@ -60,7 +60,7 @@
         <text x="30" y="56" text-anchor="middle" class="inverse">2</text>
         <rect x="70" y="10" width="182" height="80" rx="7" class="schedule" />
         <text x="161" y="42" text-anchor="middle" class="label">查询已计算前缀</text>
-        <text x="161" y="65" text-anchor="middle" class="small">命中完整 blocks 则复用</text>
+        <text x="161" y="65" text-anchor="middle" class="small">命中 token 0-3 · block 7</text>
     </g>
 
     <path d="M608 224 H648" class="arrow" />
@@ -70,10 +70,10 @@
         <text x="30" y="72" text-anchor="middle" class="inverse">3</text>
         <rect x="70" y="0" width="202" height="58" rx="7" class="schedule" />
         <text x="171" y="25" text-anchor="middle" class="label">Scheduler</text>
-        <text x="171" y="46" text-anchor="middle" class="small">本轮 token budget</text>
+        <text x="171" y="46" text-anchor="middle" class="small">本轮计算 token 4-9</text>
         <rect x="70" y="72" width="202" height="58" rx="7" class="cache" />
         <text x="171" y="97" text-anchor="middle" class="label">KV Cache Manager</text>
-        <text x="171" y="118" text-anchor="middle" class="small">可用 block budget</text>
+        <text x="171" y="118" text-anchor="middle" class="small">申请 block 19、3</text>
     </g>
 
     <path d="M920 224 H960" class="arrow" />
@@ -83,8 +83,8 @@
         <text x="30" y="56" text-anchor="middle" class="inverse">4</text>
         <rect x="70" y="10" width="96" height="80" rx="7" class="cache" />
         <text x="118" y="40" text-anchor="middle" class="label">预留</text>
-        <text x="118" y="61" text-anchor="middle" class="small">blocks</text>
-        <text x="118" y="79" text-anchor="middle" class="small">slots</text>
+        <text x="118" y="61" text-anchor="middle" class="small">block 19</text>
+        <text x="118" y="79" text-anchor="middle" class="small">block 3</text>
     </g>
 
     <path d="M1078 264 V340" class="arrow" />
@@ -94,7 +94,7 @@
         <text x="250" y="56" text-anchor="middle" class="inverse">5</text>
         <rect x="0" y="10" width="210" height="80" rx="7" class="worker" />
         <text x="105" y="40" text-anchor="middle" class="inverse">模型 Forward</text>
-        <text x="105" y="64" text-anchor="middle" class="inverse">读取历史 KV · 写入新 KV</text>
+        <text x="105" y="64" text-anchor="middle" class="inverse">读 block 7 · 写 token 4-9</text>
     </g>
 
     <path d="M864 390 H816" class="arrow" />
@@ -104,7 +104,7 @@
         <text x="250" y="56" text-anchor="middle" class="inverse">6</text>
         <rect x="0" y="10" width="210" height="80" rx="7" class="state" />
         <text x="105" y="40" text-anchor="middle" class="label">更新请求状态</text>
-        <text x="105" y="64" text-anchor="middle" class="small">token 数 · block 状态 · 采样</text>
+        <text x="105" y="64" text-anchor="middle" class="small">block table = [7, 19, 3]</text>
     </g>
 
     <path d="M576 390 H526" class="arrow" />
@@ -118,23 +118,38 @@
     <path d="M278 390 H226" class="arrow" />
     <rect x="78" y="350" width="148" height="80" rx="7" class="schedule" />
     <text x="152" y="381" text-anchor="middle" class="label">继续生成</text>
-    <text x="152" y="404" text-anchor="middle" class="small">下一轮按需追加 block</text>
+    <text x="152" y="404" text-anchor="middle" class="small">token 10-11 填 block 3</text>
 
     <path d="M152 350 C152 304 1040 324 1040 273" class="loop" />
-    <text x="600" y="319" text-anchor="middle" class="small">next scheduling step</text>
+    <text x="600" y="319" text-anchor="middle" class="small">下一轮：继续复用 block table</text>
 
     <path d="M350 442 V486" class="arrow" />
     <rect x="248" y="486" width="204" height="72" rx="7" class="warning" />
     <text x="350" y="515" text-anchor="middle" class="label">资源不足</text>
-    <text x="350" y="538" text-anchor="middle" class="small">排队 · 抢占 · 重算 · Offload</text>
+    <text x="350" y="538" text-anchor="middle" class="small">无空闲 block：排队或抢占</text>
 
     <path d="M454 442 V466 H616 V486" class="arrow" />
     <rect x="486" y="486" width="260" height="72" rx="7" class="state" />
     <text x="616" y="515" text-anchor="middle" class="label">请求完成或取消</text>
-    <text x="616" y="538" text-anchor="middle" class="small">引用计数减一 · 释放或保留为缓存</text>
+    <text x="616" y="538" text-anchor="middle" class="small">引用归零：释放或保留缓存</text>
 
     <rect x="166" y="624" width="868" height="82" rx="7" fill="#EAF3FC" stroke="#EAF3FC" />
-    <text x="600" y="653" text-anchor="middle" class="label">PagedAttention 不是孤立的 kernel 优化</text>
-    <text x="600" y="678" text-anchor="middle" class="body">调度器决定“这一轮算多少”，缓存管理器保证“这些 token
-        有地方写”，Worker 根据 metadata 完成实际读写</text>
+    <text x="600" y="653" text-anchor="middle" class="label">继续生成时 block 3 还有两个空槽</text>
+    <text x="600" y="678" text-anchor="middle" class="body">token 10、11 直接写入 block 3；token 12 才申请新
+        block，物理位置无需相邻</text>
+    <style id="editorial-diagram-style">
+        text { font-family: Helvetica Neue, Segoe UI, sans-serif; letter-spacing: 0; }
+        .title { fill: #111111 !important; font-weight: 800 !important; }
+        .subtitle, .small { fill: #333333 !important; }
+        .inverse { fill: #111111 !important; }
+        rect { rx: 3px; }
+        .panel { fill: #F4F4F4 !important; stroke: #111111 !important; stroke-width: 3 !important; }
+        .input, .schedule { fill: #DDE0F1 !important; stroke: #111111 !important; stroke-width: 2.5 !important; }
+        .cache { fill: #F2E6D8 !important; stroke: #111111 !important; stroke-width: 2.5 !important; }
+        .worker, .state { fill: #DCEBDF !important; stroke: #111111 !important; stroke-width: 2.5 !important; }
+        .warning { fill: #F2D9D8 !important; stroke: #111111 !important; stroke-width: 2.5 !important; }
+        .arrow, .loop { stroke: #111111 !important; stroke-width: 3 !important; }
+        marker path { fill: #111111 !important; }
+        [fill="#F5F5F7" i] { fill: #FFFFFF !important; }
+    </style>
 </svg>

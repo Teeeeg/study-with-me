@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="720" viewBox="0 0 1400 720" role="img"
+    aria-labelledby="title desc">
+    <title id="title">PagedAttention 的 KV 地址查找流程</title>
+    <desc id="desc">逻辑 token 位置经过整除、取模和 block table 查找，最终定位到物理 KV block 中的具体地址。</desc>
+    <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8"
+            orient="auto">
+            <path d="M0 0 L10 5 L0 10 Z" fill="#64748B" />
+        </marker>
+        <style>
+      text { font-family: Avenir Next, Segoe UI, sans-serif; letter-spacing: 0; }
+      .title { font-size: 30px; font-weight: 700; fill: #172033; }
+      .subtitle { font-size: 16px; fill: #526070; }
+      .heading { font-size: 18px; font-weight: 700; fill: #24324a; }
+      .body { font-size: 15px; fill: #334155; }
+      .code { font-size: 16px; font-family: Cascadia Code, Consolas, monospace; fill: #172033; }
+      .small { font-size: 13px; fill: #64748B; }
+      .panel { fill: #FFFFFF; stroke: #CBD5E1; stroke-width: 1.5; }
+      .input { fill: #E0F2FE; stroke: #38A3D1; stroke-width: 1.7; }
+      .compute { fill: #EEF2FF; stroke: #7484D8; stroke-width: 1.7; }
+      .lookup { fill: #FFF4E5; stroke: #D2A532; stroke-width: 1.7; }
+      .result { fill: #DCFCE7; stroke: #43A56C; stroke-width: 1.7; }
+      .arrow { fill: none; stroke: #64748B; stroke-width: 2.4; marker-end: url(#arrow); }
+      .guide { stroke: #CBD5E1; stroke-width: 1.2; stroke-dasharray: 6 5; }
+    </style>
+    </defs>
+
+    <rect width="1400" height="720" fill="#F5F7FA" />
+    <text x="70" y="68" class="title">PagedAttention：从逻辑位置查找 KV 地址</text>
+    <text x="70" y="101" class="subtitle">逻辑序列不直接对应连续显存，而是通过 block table 间接定位物理 KV block。</text>
+
+    <rect x="70" y="150" width="260" height="170" rx="12" class="input" />
+    <text x="100" y="190" class="heading">输入逻辑位置</text>
+    <text x="100" y="235" class="code">position = 10</text>
+    <text x="100" y="271" class="body">请求中的第 10 个 token</text>
+    <text x="100" y="296" class="small">block_size = 4</text>
+
+    <path d="M330 235 H390" class="arrow" />
+
+    <rect x="390" y="150" width="270" height="170" rx="12" class="compute" />
+    <text x="420" y="190" class="heading">计算逻辑 block</text>
+    <text x="420" y="235" class="code">10 // 4 = 2</text>
+    <text x="420" y="271" class="body">logical_block = 2</text>
+    <text x="420" y="296" class="small">确定 token 属于第几个逻辑块</text>
+
+    <path d="M660 235 H720" class="arrow" />
+
+    <rect x="720" y="150" width="270" height="170" rx="12" class="compute" />
+    <text x="750" y="190" class="heading">计算块内偏移</text>
+    <text x="750" y="235" class="code">10 % 4 = 2</text>
+    <text x="750" y="271" class="body">offset = 2</text>
+    <text x="750" y="296" class="small">定位 block 内的第几个槽位</text>
+
+    <path d="M990 235 H1050" class="arrow" />
+
+    <rect x="1050" y="150" width="280" height="170" rx="12" class="lookup" />
+    <text x="1080" y="190" class="heading">查询 block table</text>
+    <text x="1080" y="235" class="code">table[2] = 3</text>
+    <text x="1080" y="271" class="body">physical_block = 3</text>
+    <text x="1080" y="296" class="small">逻辑块 2 映射到物理块 3</text>
+
+    <path d="M1190 320 V390 H700" class="arrow" />
+
+    <rect x="250" y="390" width="900" height="120" rx="12" class="result" />
+    <text x="285" y="430" class="heading">最终 KV 地址</text>
+    <text x="285" y="472" class="code">layout(layer, K_or_V, physical_block=3, offset=2, kv_head,
+        head_dim)</text>
+    <text x="285" y="495" class="small">再结合层、K/V 类型、KV head 和 head dimension，读取物理显存中的对应元素。</text>
+
+    <text x="70" y="575" class="heading">一次间接寻址的关键关系</text>
+    <line x1="70" y1="595" x2="1330" y2="595" class="guide" />
+    <text x="100" y="640" class="body">逻辑位置</text>
+    <text x="250" y="640" class="code">10</text>
+    <text x="350" y="640" class="body">→ 逻辑块</text>
+    <text x="490" y="640" class="code">2</text>
+    <text x="590" y="640" class="body">→ block table</text>
+    <text x="750" y="640" class="code">3</text>
+    <text x="850" y="640" class="body">→ 物理块</text>
+    <text x="1010" y="640" class="code">3 + offset 2</text>
+    <style id="editorial-diagram-style">
+        text { font-family: Helvetica Neue, Segoe UI, sans-serif; letter-spacing: 0; }
+        .title { fill: #111111 !important; font-weight: 800 !important; }
+        .subtitle, .small { fill: #333333 !important; }
+        rect { rx: 3px; }
+        .panel { fill: #F4F4F4 !important; stroke: #111111 !important; stroke-width: 3 !important; }
+        .input, .compute { fill: #DDE0F1 !important; stroke: #111111 !important; stroke-width: 2.5 !important; }
+        .lookup { fill: #F2E6D8 !important; stroke: #111111 !important; stroke-width: 2.5 !important; }
+        .result { fill: #DCEBDF !important; stroke: #111111 !important; stroke-width: 2.5 !important; }
+        .arrow { stroke: #111111 !important; stroke-width: 3 !important; }
+        marker path { fill: #111111 !important; }
+        [fill="#F5F7FA" i] { fill: #FFFFFF !important; }
+    </style>
+</svg>

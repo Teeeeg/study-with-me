@@ -1,7 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900" role="img"
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="450" viewBox="0 430 1200 450"
+    role="img"
     aria-labelledby="title desc">
-    <title id="title">KV Block 复用与 Copy-on-Write：先共享，写入时才复制</title>
-    <desc id="desc">上半部分展示两个请求仅共享完全相同的首个完整 block；下半部分分四步展示两个解码分支共享尾块、写入冲突、复制尾块以及各自继续写入的过程。</desc>
+    <title id="title">KV Block 的 Copy-on-Write：写入时才复制</title>
+    <desc id="desc">分四步展示两个解码分支共享尾块、写入冲突、复制尾块以及各自继续写入的过程。</desc>
     <defs>
         <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
             orient="auto">
@@ -36,7 +37,7 @@
     </defs>
   <rect width="100%" height="100%" fill="#F5F5F7"/>
 
-    <rect width="1200" height="820" fill="#F5F5F7" />
+    <rect width="1200" height="900" fill="#F5F5F7" />
     <text x="600" y="48" text-anchor="middle" class="title">KV Block 复用：先共享，真正写入时才复制</text>
     <text x="600" y="78" text-anchor="middle" class="subtitle">像共用一份只读草稿：谁要续写，谁才复印最后一页</text>
 
@@ -134,4 +135,19 @@
     <rect x="130" y="798" width="940" height="42" rx="6" fill="#EAF8EE" stroke="#34C759" />
     <text x="600" y="824" text-anchor="middle" class="body">只复制将被修改的共享尾块，不复制整条 KV
         Cache；若尾块已满，直接申请新块，无需复制</text>
+    <style id="editorial-diagram-style">
+    text { font-family: Helvetica Neue, Segoe UI, sans-serif; letter-spacing: 0; }
+    .title { fill: #111111 !important; font-weight: 800 !important; }
+    .subtitle, .small { fill: #333333 !important; }
+    .inverse { fill: #111111 !important; }
+    rect { rx: 3px; }
+    .panel, .step { fill: #F4F4F4 !important; stroke: #111111 !important; stroke-width: 3 !important; }
+    .shared { fill: #DDE0F1 !important; stroke: #111111 !important; stroke-width: 2.5 !important; }
+    .requestA { fill: #DCEBDF !important; stroke: #111111 !important; stroke-width: 2.5 !important; }
+    .requestB { fill: #F2E6D8 !important; stroke: #111111 !important; stroke-width: 2.5 !important; }
+    .copy, .danger { fill: #F2D9D8 !important; stroke: #111111 !important; stroke-width: 2.5 !important; }
+    .arrow, .shareArrow { stroke: #111111 !important; stroke-width: 3 !important; }
+    marker path { fill: #111111 !important; }
+    [fill="#F5F5F7" i] { fill: #FFFFFF !important; }
+  </style>
 </svg>

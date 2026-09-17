@@ -77,4 +77,17 @@
     <text x="466" y="679" class="ink tiny">cache checkpoint</text>
     <text x="760" y="679" class="ink tiny">If any token before the line changes, the match stops
         there.</text>
+    <style id="editorial-diagram-style">
+        text { font-family: Helvetica Neue, Segoe UI, sans-serif; letter-spacing: 0; }
+        .title { fill: #111111 !important; font-weight: 800 !important; }
+        .small, .tiny { fill: #333333 !important; }
+        rect { rx: 3px; }
+        .panel { fill: #F4F4F4 !important; stroke: #111111 !important; stroke-width: 3 !important; }
+        .stable { fill: #DDE0F1 !important; stroke: #111111 !important; stroke-width: 2.5 !important; }
+        .dynamic { fill: #F2E6D8 !important; stroke: #111111 !important; stroke-width: 2.5 !important; }
+        .checkpoint, .miss { fill: #F2D9D8 !important; stroke: #A52A2A !important; stroke-width: 3 !important; }
+        .hit { fill: #DCEBDF !important; stroke: #111111 !important; stroke-width: 2.5 !important; }
+        marker path { fill: #111111 !important; }
+        [fill="#F5F5F7" i] { fill: #FFFFFF !important; }
+    </style>
 </svg>

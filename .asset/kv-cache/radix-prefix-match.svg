@@ -72,4 +72,17 @@
     <rect x="212" y="590" width="776" height="38" rx="6" fill="#EAF3FC" stroke="#EAF3FC" />
     <text x="600" y="614" text-anchor="middle" class="body">计算边界 = 最长公共前缀末端；Prefix Caching 跳过的是重复
         Prefill，不是整个 Prefill 阶段</text>
+    <style id="editorial-diagram-style">
+        text { font-family: Helvetica Neue, Segoe UI, sans-serif; letter-spacing: 0; }
+        .title { fill: #111111 !important; font-weight: 800 !important; }
+        .subtitle, .small { fill: #333333 !important; }
+        rect { rx: 3px; }
+        .panel { fill: #F4F4F4 !important; stroke: #111111 !important; stroke-width: 3 !important; }
+        .hit, .branch { fill: #DDE0F1 !important; stroke: #111111 !important; stroke-width: 2.5 !important; }
+        .miss { fill: #F2D9D8 !important; stroke: #111111 !important; stroke-width: 2.5 !important; }
+        .cache { fill: #F2E6D8 !important; stroke: #111111 !important; stroke-width: 2.5 !important; }
+        .edge, .hit-edge, .arrow { stroke: #111111 !important; stroke-width: 3 !important; }
+        marker path { fill: #111111 !important; }
+        [fill="#F5F5F7" i] { fill: #FFFFFF !important; }
+    </style>
 </svg>

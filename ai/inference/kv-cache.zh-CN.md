@@ -384,20 +384,7 @@ LLM 请求有三个特征，让这个问题格外突出：
 
 PagedAttention 把逻辑序列切成固定 token 数的块。假设每个 block 容纳 4 个 token，请求包含 10 个 token：
 
-```text
-logical block 0: token 0  1  2  3
-logical block 1: token 4  5  6  7
-logical block 2: token 8  9  _  _
-```
-
-这三个逻辑块可以映射到任意空闲物理块：
-
-```text
-logical blocks:  [0] [1] [2]
-block table:      7  19   3
-
-physical pool:  ...[3]...[7].........[19]...
-```
+这三个逻辑块可以映射到任意空闲物理块，逻辑顺序由 block table 维护，而不要求物理块连续。
 
 当请求继续生成第 11、12 个 token，只需填满物理块 3 的剩余槽位；生成第 13 个 token 时才申请一个新块。请求不必在开始时知道最终长度，也不要求下一块与当前块物理相邻。
 
@@ -411,104 +398,53 @@ physical pool:  ...[3]...[7].........[19]...
 
 可以把地址查找概括为：
 
-```text
-(request, logical token position)
-              │
-              ├─► logical_block = position // block_size
-              ├─► offset        = position %  block_size
-              ├─► physical_block = block_table[logical_block]
-              └─► KV address = layout(layer, K_or_V,
-                                      physical_block, offset,
-                                      kv_head, head_dim)
-```
+![PagedAttention 从逻辑位置查找物理 KV 地址的流程](../../.asset/kv-cache/paged-address-lookup.svg)
 
 PagedAttention kernel 需要按 block table 收集 K/V。与连续张量相比，这增加了间接寻址和元数据处理；但换来了更高的有效缓存容量和动态分配能力。kernel 的任务就是让这层间接性不会抵消内存管理收益。
 
 ### 一条请求的完整生命周期
 
-#### 1. 到达与 token 化
-
-请求先被 tokenizer 转成 token IDs。调度器知道 prompt token 数、最大输出长度、优先级等信息，但不知道请求会在何时遇到停止词，也不知道模型实际生成多长。
-
-#### 2. 查询已计算前缀
-
-若启用 automatic prefix caching，KV Cache manager 会按完整 token block 计算哈希，查找是否已有相同前缀。命中部分无需重新 prefill。
-
-#### 3. 预留写入槽位
-
-调度器确定本轮允许计算多少 token；cache manager 检查需要多少新块，从 free block queue 中分配物理块，并生成 slot mapping 或 attention metadata。
-
-#### 4. 模型执行
-
-worker 对本轮 token 做 forward，将新 K/V 写入分配好的 slot。PagedAttention kernel 按每个请求的 block table 读取历史 K/V。
-
-#### 5. 更新状态
-
-执行完成后，系统更新已计算 token 数、采样结果和 block 状态。部分块填满后可以进入前缀缓存索引；未填满的尾块继续属于当前请求。
-
-#### 6. 继续、抢占或结束
-
-若请求继续生成，下一轮复用现有 blocks，必要时再申请新块。若资源不足，调度器可能让请求等待或抢占；请求完成、取消且 block 不再被其他请求引用后，blocks 返回空闲队列。
-
-简化的数据流是：
-
-```text
-request arrives
-      │
-      ▼
-lookup computed prefix ──► reserve blocks / slots
-      │                              │
-      └──────────────────────────────┘
-                                     ▼
-                           schedule model forward
-                                     │
-                                     ▼
-                         write new K/V into slots
-                                     │
-                 ┌───────────────────┴───────────────────┐
-                 ▼                                       ▼
-          request continues                       request finishes
-          append/allocate                         decrease ref count
-                 │                                free or keep cached
-                 └──────────── next step ────────────────┘
-```
-
 ![PagedAttention 请求生命周期](../../.asset/kv-cache/paged-request-lifecycle.svg)
+
+例如，设 `block_size=4`，请求的 prompt 有 10 个 token，前缀缓存命中了前 4 个 token：调度器复用命中的 block 7，再为剩余 6 个 token 分配物理 block 19 和 3，并生成对应的 block table `[7, 19, 3]`。本轮 worker 计算未命中的 6 个 token，将 K/V 写入 block 19 和 block 3 的前两个槽位；如果请求继续生成第 11、12 个 token，就继续写入 block 3 的剩余槽位，直到第 13 个 token 才需要申请新 block。
+
+图中省略了部分实现细节：请求先由 tokenizer 生成 token IDs，调度器结合 token budget 和 block budget 决定本轮工作；命中的完整前缀 block 可以直接复用，未命中的 token 则由 worker 计算并写入新分配的 slot。请求继续时复用已有 block，资源不足时可能排队、抢占或重算；结束后，只有引用计数归零的 block 才能释放或保留为缓存。
 
 ### 分页与 continuous batching 的协同
 
-Continuous batching 允许每个调度 step 移除已完成请求，再加入等待队列中的新请求。若缓存必须连续分配，batch 频繁变化会带来昂贵的重排；分页后，请求只需携带自己的 block table，物理块可以独立分配和回收。
+Continuous batching 要解决的问题是：不同请求生成速度不同，有的提前结束，有的仍在 decode，还有新请求正在等待。为了不让 GPU 等到整批请求全部完成，调度器会在每个 step 重新组成 batch：移除已结束的请求，再从等待队列补入新请求。
 
-调度器和缓存管理器因此必须共同决定本轮工作：
+例如，当前 batch 中有请求 A、B、C。A 在本轮结束后完成，下一轮调度器便移除 A，并加入等待中的请求 D。如果每个请求的 KV Cache 必须占据一段连续显存，A 退出和 D 加入可能需要寻找新的连续空间，甚至搬移 B、C 的缓存。PagedAttention 把缓存拆成独立 block 后，只需释放 A 的物理块，再把其中的空闲块分配给 D；B、C 的 block table 和已有 KV 都不用移动。
 
-- 调度器有 token budget，决定多少 prefill/decode token 可以执行；
-- cache manager 有 block budget，判断这些 token 是否有写入空间；
-- worker 需要两者生成的 metadata，才能读写正确地址。
+![Continuous batching 动态换入请求并复用 PagedAttention block](../../.asset/kv-cache/paged-continuous-batching.svg)
 
-只有 PagedAttention kernel，没有与之配套的动态调度，并不能自动得到 vLLM 的整体吞吐；反过来，调度器若忽略缓存容量，也可能过量接纳请求并触发频繁抢占。
+不过，“本轮想算多少”和“显存能否容纳”仍是两个约束：
+
+- 调度器根据 token budget，选择本轮为哪些请求执行多少 prefill 或 decode token；
+- cache manager 根据剩余 block 数，检查这些 token 是否都有可写入的 KV slot；
+- 两项检查都通过后，worker 才根据 block table 和 slot mapping 执行读写。
+
+因此，continuous batching 负责动态组合请求，PagedAttention 负责让这些请求的 KV Cache 能低成本地加入、增长和回收。两者协同，才能在 batch 持续变化时保持 GPU 忙碌，同时避免缓存搬移和过量分配。
 
 ### Automatic Prefix Caching 如何复用 block
 
-很多服务请求共享长 system prompt、工具定义或同一文档。相同前缀的 K/V 与后续采样参数无关，可以被复用，从而省掉重复 prefill。
+很多请求会重复使用同一段 system prompt、工具定义或文档。由于相同前缀会产生相同的 K/V，新请求可以直接引用已经计算好的物理 block，跳过这部分 prefill。后续使用什么采样参数，不会改变这段前缀已经产生的 K/V。
 
-vLLM 的哈希式前缀缓存可以把第 $i$ 个 block 的身份理解为：
+缓存命中遵循一条关键规则：**从序列开头逐块比较，只复用连续命中且已经填满的 block；遇到第一个不同的 block 就停止。**
+
+![Automatic Prefix Caching 从开头逐块匹配并共享物理 block](../../.asset/kv-cache/paged-prefix-cache-match.svg)
+
+图中两个请求只能共享第一块 `[A B C D]`。第二块的最后一个 token 不同，命中在此停止，Request B 从第二块开始重新执行 prefill；A 尚未填满的尾块则要等到完整后，才可能加入缓存索引。
+
+vLLM 用链式哈希实现这条规则。第 $i$ 个 block 的缓存身份可以理解为：
 
 $$
 H_i=\operatorname{hash}(H_{i-1},\ tokens_i,\ extra)
 $$
 
-父 block 哈希把此前完整前缀纳入身份，`tokens_i` 是当前 block 的 token，`extra` 则应包含会影响 K/V 的其他信息，如 LoRA adapter、多模态输入哈希或缓存隔离 salt。
+其中，`tokens_i` 是当前 block 的 token，$H_{i-1}$ 代表它之前的全部完整前缀。因此，即使后面某个 block 的 token 恰好相同，只要前面已经发生分歧，它的哈希也会不同，不能错误地重新命中。`extra` 还会纳入会影响缓存身份或隔离范围的信息，例如 LoRA adapter、多模态输入哈希和 cache salt。
 
-只有完整 block 容易安全命中。设 block size 为 4：
-
-```text
-Request A: [A B C D] [E F G H] [I J _ _]
-Request B: [A B C D] [E F G X] [...]
-```
-
-两者只能共享第一块。第二块最后一个 token 不同，从这里开始后续 K/V 都处在不同上下文中；A 的不完整尾块也不作为完整前缀共享。
-
-共享块带有引用计数。多个请求引用时，物理块不能被释放或覆盖；引用归零后，它可以暂时留在缓存索引中等待未来命中，也可以在需要空间时被淘汰。
+被命中的物理 block 不会复制，而是由多个请求共同引用。引用计数大于 0 时，它不能被释放或覆盖；引用归零后，它可以继续留在缓存中等待下次命中，也可以在显存不足时被淘汰。
 
 #### 共享不应突破租户边界
 

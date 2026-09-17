@@ -198,4 +198,20 @@
     <text x="720" y="732" text-anchor="middle"
         font-family="Avenir Next, Segoe UI, sans-serif" font-size="19"
         font-weight="700" fill="#ffffff">而是选择“缓存复用 + 排队 + 搬运”总延迟最低的路径</text>
+    <style id="editorial-diagram-style">
+        text { font-family: Helvetica Neue, Segoe UI, sans-serif; letter-spacing: 0; }
+        .page-title { fill: #111111 !important; font-weight: 800 !important; }
+        .page-subtitle, .small, .tiny { fill: #333333 !important; }
+        rect { rx: 3px; }
+        .card { fill: #F4F4F4 !important; stroke: #111111 !important; stroke-width: 3 !important; filter: none !important; }
+        .flow { stroke: #111111 !important; stroke-width: 3 !important; }
+        .cache-read { stroke: #2D8C64 !important; stroke-width: 3 !important; }
+        .cache-write { stroke: #A52A2A !important; stroke-width: 3 !important; }
+        marker path { fill: #111111; }
+        [fill="#F5F5F7" i] { fill: #FFFFFF !important; }
+        [fill="#EAF3FC" i], [fill="#DBEAFE" i] { fill: #DDE0F1 !important; }
+        [fill="#FFF4E5" i] { fill: #F2E6D8 !important; }
+        [fill="#EAF8EE" i], [fill="#DCFCE7" i] { fill: #DCEBDF !important; }
+        [fill="#FFF0EF" i] { fill: #F2D9D8 !important; }
+    </style>
 </svg>

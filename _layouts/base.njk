@@ -3,7 +3,6 @@
 {% set t = i18n[lang] %}
 {% set otherLang = 'zh' if lang == 'en' else 'en' %}
 {% set homePage = collections.all | byRefLang('home', lang) %}
-{% set backlogPage = collections.all | byRefLang('backlog', lang) %}
 {% set altPage = collections.all | byRefLang(ref, otherLang) %}
 {% set otherHome = collections.all | byRefLang('home', otherLang) %}
 {% set switchUrl = altPage.url if altPage else otherHome.url %}
@@ -33,9 +32,6 @@
 
       <nav class="topnav" aria-label="{{ t.sections }}">
         <a href="{{ homePage.url | url }}"{% if ref == 'home' %} aria-current="page"{% endif %}>{{ t.home }}</a>
-        {% if backlogPage %}
-        <a href="{{ backlogPage.url | url }}"{% if ref == 'backlog' %} aria-current="page"{% endif %}>{{ t.backlog }}</a>
-        {% endif %}
       </nav>
 
       <a class="lang-switch" href="{{ switchUrl | url }}"

@@ -307,56 +307,6 @@ pre code { background: none; padding: 0; font-size: .855em; }
 .cluster-list a { display: block; padding: 9px 0; font-weight: 550; }
 .item-desc { display: block; color: var(--fg-muted); font-size: 14px; font-weight: 400; }
 
-/* ---------- backlog ---------- */
-
-.backlog-count {
-  display: inline-block;
-  font-family: var(--mono);
-  font-size: 13px;
-  color: var(--fg-muted);
-  background: var(--bg-inset);
-  border-radius: 999px;
-  padding: 3px 12px;
-}
-
-.backlog-group { margin-top: 2.2rem; }
-.backlog-group h2 { font-size: 1.25rem; }
-
-.backlog-list { list-style: none; margin: 0; padding: 0; }
-
-.backlog-item {
-  display: flex;
-  gap: 12px;
-  align-items: baseline;
-  padding: 10px 0;
-  border-top: 1px solid var(--border);
-}
-.backlog-item:first-child { border-top: 0; }
-
-.backlog-text { flex: 1; min-width: 0; }
-.backlog-note {
-  display: block;
-  color: var(--fg-muted);
-  font-size: 14px;
-}
-
-.is-todo .backlog-text { color: var(--fg-muted); }
-
-.badge {
-  flex: none;
-  min-width: 74px;
-  text-align: center;
-  font-size: 11.5px;
-  font-weight: 650;
-  letter-spacing: .02em;
-  padding: 2px 9px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  color: var(--fg-muted);
-  background: var(--bg-soft);
-}
-.badge-done { color: #1a7f45; background: #e6f6ec; border-color: #bfe6cd; }
-.badge-doing { color: #9a6400; background: #fff4de; border-color: #f0dcae; }
 
 @media (prefers-color-scheme: dark) {
   .badge-done { color: #6cd696; background: #122a1c; border-color: #244d33; }
