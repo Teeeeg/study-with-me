@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620" role="img" aria-labelledby="title desc">
+  <title id="title">SGLang 请求的前缀匹配与 KV Cache 写回流程</title>
+  <desc id="desc">请求经过 match_prefix 找到命中前缀，将命中的物理 block 写入 Block Table，只对未命中 token 执行 Prefill，最后将新 token 与新物理 block 插入 RadixCache。</desc>
+  <defs>
+    <marker id="arrowBlue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#0071E3"/></marker>
+    <style>
+      text { font-family: Avenir Next, Segoe UI, sans-serif; letter-spacing: 0; }
+      .title { font-size: 30px; font-weight: 700; fill: #172033; }
+      .subtitle { font-size: 16px; fill: #526070; }
+      .heading { font-size: 19px; font-weight: 700; fill: #24324a; }
+      .label { font-size: 15px; font-weight: 700; fill: #334155; }
+      .body { font-size: 14px; fill: #334155; }
+      .small { font-size: 13px; fill: #6E6E73; }
+      .inverse { font-size: 14px; font-weight: 700; fill: #ffffff; }
+      .panel { fill: #ffffff; stroke: #D2D2D7; stroke-width: 1.5; }
+      .step { fill: #ffffff; stroke: #4f8fce; stroke-width: 1.5; }
+      .hit { fill: #dcfce7; stroke: #43a56c; stroke-width: 1.5; }
+      .miss { fill: #FFF4E5; stroke: #d2a532; stroke-width: 1.5; }
+      .write { fill: #EAF3FC; stroke: #0071E3; stroke-width: 1.5; }
+      .flow { fill: none; stroke: #0071E3; stroke-width: 2.5; marker-end: url(#arrowBlue); }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#F5F5F7"/>
+  <text x="600" y="48" text-anchor="middle" class="title">请求如何复用并扩展 KV Cache</text>
+  <text x="600" y="78" text-anchor="middle" class="subtitle">复用前缀，计算后缀，再登记新缓存</text>
+
+  <rect x="50" y="112" width="1100" height="360" rx="8" class="panel"/>
+  <text x="78" y="146" class="heading">请求处理路径</text>
+
+  <rect x="80" y="198" width="220" height="160" rx="8" class="step"/>
+  <circle cx="112" cy="232" r="18" fill="#4f8fce"/><text x="107" y="238" class="inverse">1</text>
+  <text x="145" y="238" class="label">match_prefix</text>
+  <text x="103" y="276" class="body">输入：tokens</text>
+  <text x="103" y="302" class="body">输出：node、prefix_len</text>
+  <text x="103" y="328" class="body">以及命中的 block_ids</text>
+
+  <rect x="330" y="198" width="220" height="160" rx="8" class="hit"/>
+  <circle cx="362" cy="232" r="18" fill="#43a56c"/><text x="357" y="238" class="inverse">2</text>
+  <text x="395" y="238" class="label">装载命中映射</text>
+  <text x="353" y="276" class="body">block_ids → Block Table</text>
+  <text x="353" y="302" class="body">命中前缀直接复用</text>
+  <text x="353" y="328" class="small">无需重复 Prefill</text>
+
+  <rect x="580" y="198" width="220" height="160" rx="8" class="miss"/>
+  <circle cx="612" cy="232" r="18" fill="#d2a532"/><text x="607" y="238" class="inverse">3</text>
+  <text x="645" y="238" class="label">Prefill 未命中部分</text>
+  <text x="603" y="276" class="body">tokens[prefix_len:]</text>
+  <text x="603" y="302" class="body">申请新物理 blocks</text>
+  <text x="603" y="328" class="small">计算并写入新的 K/V</text>
+
+  <rect x="830" y="198" width="240" height="160" rx="8" class="write"/>
+  <circle cx="862" cy="232" r="18" fill="#0071E3"/><text x="857" y="238" class="inverse">4</text>
+  <text x="895" y="238" class="label">insert 新缓存</text>
+  <text x="853" y="276" class="body">tokens + new_block_ids</text>
+  <text x="853" y="302" class="body">登记回 RadixCache</text>
+  <text x="853" y="328" class="small">供后续请求继续命中</text>
+
+  <path d="M302 278 H326" class="flow"/>
+  <path d="M552 278 H576" class="flow"/>
+  <path d="M802 278 H826" class="flow"/>
+
+  <rect x="130" y="402" width="940" height="42" rx="8" fill="#172033"/>
+  <text x="600" y="429" text-anchor="middle" class="inverse">命中部分减少计算，未命中部分产生新 KV，Block Table 始终记录当前请求的完整访问路径</text>
+
+  <rect x="50" y="500" width="1100" height="80" rx="8" class="panel"/>
+  <text x="78" y="530" class="heading">关键不变量</text>
+  <text x="78" y="558" class="body">只有完整且稳定的前缀适合加入共享缓存；活跃请求仍通过引用计数保护正在使用的物理 blocks。</text>
+    <style id="editorial-diagram-style">
+        text { font-family: Helvetica Neue, Segoe UI, sans-serif; letter-spacing: 0; }
+        .title { fill: #111111 !important; font-weight: 800 !important; }
+        .subtitle, .small { fill: #333333 !important; }
+        .heading, .label { fill: #111111 !important; font-weight: 800 !important; }
+        .body { fill: #333333 !important; }
+        rect { rx: 3px; }
+        .panel { fill: #F4F4F4 !important; stroke: #111111 !important; stroke-width: 3 !important; }
+        .step { fill: #FFFFFF !important; stroke: #111111 !important; stroke-width: 2.5 !important; }
+        .hit { fill: #DCEBDF !important; stroke: #111111 !important; stroke-width: 2.5 !important; }
+        .miss { fill: #F2E6D8 !important; stroke: #111111 !important; stroke-width: 2.5 !important; }
+        .write { fill: #DDE0F1 !important; stroke: #111111 !important; stroke-width: 2.5 !important; }
+        .flow { stroke: #111111 !important; stroke-width: 3 !important; }
+        marker path { fill: #111111 !important; }
+        circle { fill: #111111 !important; }
+        [fill="#F5F5F7" i] { fill: #FFFFFF !important; }
+        [fill="#172033" i] { fill: #111111 !important; }
+    </style>
+</svg>

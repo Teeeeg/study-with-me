@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="560" viewBox="0 0 1200 560" role="img" aria-labelledby="title desc">
+  <title id="title">SGLang RadixAttention 与 PagedAttention 的组件关系</title>
+  <desc id="desc">RadixCache 组织 token 前缀并保存 Block ID，Block Table 为请求维护逻辑块到物理块的映射，TokenToKVPool 管理物理 KV Blocks，PagedAttention kernel 根据映射读写 KV。</desc>
+  <defs>
+    <marker id="arrowBlue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#0071E3"/></marker>
+    <marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#167333"/></marker>
+    <marker id="arrowGold" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#8A4B00"/></marker>
+    <style>
+      text { font-family: Avenir Next, Segoe UI, sans-serif; letter-spacing: 0; }
+      .title { font-size: 30px; font-weight: 700; fill: #172033; }
+      .subtitle { font-size: 16px; fill: #526070; }
+      .heading { font-size: 19px; font-weight: 700; fill: #24324a; }
+      .label { font-size: 15px; font-weight: 700; fill: #334155; }
+      .body { font-size: 14px; fill: #334155; }
+      .small { font-size: 13px; fill: #6E6E73; }
+      .inverse { font-size: 14px; font-weight: 700; fill: #ffffff; }
+      .panel { fill: #ffffff; stroke: #D2D2D7; stroke-width: 1.5; }
+      .radix { fill: #dbeafe; stroke: #4f8fce; stroke-width: 1.5; }
+      .table { fill: #dcfce7; stroke: #43a56c; stroke-width: 1.5; }
+      .pool { fill: #FFF4E5; stroke: #d2a532; stroke-width: 1.5; }
+      .kernel { fill: #eef2f7; stroke: #94a3b8; stroke-width: 1.5; }
+      .blueFlow { fill: none; stroke: #0071E3; stroke-width: 2.5; marker-end: url(#arrowBlue); }
+      .greenFlow { fill: none; stroke: #167333; stroke-width: 2.5; marker-end: url(#arrowGreen); }
+      .goldFlow { fill: none; stroke: #8A4B00; stroke-width: 2.5; marker-end: url(#arrowGold); }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#F5F5F7"/>
+  <text x="600" y="48" text-anchor="middle" class="title">RadixAttention 与 PagedAttention 的连接</text>
+  <text x="600" y="78" text-anchor="middle" class="subtitle">RadixCache 复用逻辑前缀，PagedAttention 访问物理 KV blocks</text>
+
+  <rect x="50" y="112" width="1100" height="370" rx="8" class="panel"/>
+  <text x="78" y="146" class="heading">一次映射经过四个组件</text>
+
+  <rect x="85" y="198" width="220" height="160" rx="8" class="radix"/>
+  <text x="195" y="232" text-anchor="middle" class="label">RadixCache</text>
+  <text x="110" y="266" class="body">token 前缀片段</text>
+  <text x="110" y="294" class="body">最长前缀匹配</text>
+  <rect x="110" y="315" width="170" height="28" rx="5" fill="#ffffff" stroke="#4f8fce"/>
+  <text x="195" y="334" text-anchor="middle" class="small">tokens → block_ids</text>
+
+  <rect x="350" y="198" width="220" height="160" rx="8" class="table"/>
+  <text x="460" y="232" text-anchor="middle" class="label">Block Table</text>
+  <text x="375" y="266" class="body">当前请求的索引</text>
+  <text x="375" y="294" class="body">logical → physical block</text>
+  <rect x="375" y="315" width="170" height="28" rx="5" fill="#ffffff" stroke="#43a56c"/>
+  <text x="460" y="334" text-anchor="middle" class="small">[7, 19, 3, ...]</text>
+
+  <rect x="615" y="198" width="220" height="160" rx="8" class="pool"/>
+  <text x="725" y="232" text-anchor="middle" class="label">TokenToKVPool</text>
+  <text x="640" y="266" class="body">分配与回收 blocks</text>
+  <text x="640" y="294" class="body">保存实际 K/V 数据</text>
+  <rect x="640" y="315" width="170" height="28" rx="5" fill="#ffffff" stroke="#d2a532"/>
+  <text x="725" y="334" text-anchor="middle" class="small">物理 block #7 / #19 / #3</text>
+
+  <rect x="880" y="198" width="220" height="160" rx="8" class="kernel"/>
+  <text x="990" y="232" text-anchor="middle" class="label">PagedAttention</text>
+  <text x="905" y="266" class="body">按 Block Table 寻址</text>
+  <text x="905" y="294" class="body">收集、计算、写回 K/V</text>
+  <rect x="905" y="315" width="170" height="28" rx="5" fill="#ffffff" stroke="#94a3b8"/>
+  <text x="990" y="334" text-anchor="middle" class="small">不要求物理连续</text>
+
+  <path d="M307 278 H347" class="blueFlow"/>
+  <text x="327" y="258" text-anchor="middle" class="small">映射</text>
+  <path d="M572 278 H612" class="greenFlow"/>
+  <text x="592" y="258" text-anchor="middle" class="small">分配</text>
+  <path d="M837 278 H877" class="goldFlow"/>
+  <text x="857" y="258" text-anchor="middle" class="small">寻址</text>
+
+  <rect x="120" y="410" width="960" height="42" rx="8" fill="#172033"/>
+  <text x="600" y="437" text-anchor="middle" class="inverse" fill="#ffffff">逻辑前缀可以连续复用，物理 KV blocks 可以分散存放</text>
+    <style id="editorial-diagram-style">
+        text { font-family: Helvetica Neue, Segoe UI, sans-serif; letter-spacing: 0; }
+        .title { fill: #111111 !important; font-weight: 800 !important; }
+        .subtitle, .small { fill: #333333 !important; }
+        .heading, .label { fill: #111111 !important; font-weight: 800 !important; }
+        .body { fill: #333333 !important; }
+        rect { rx: 3px; }
+        .panel { fill: #F4F4F4 !important; stroke: #111111 !important; stroke-width: 3 !important; }
+        .radix { fill: #DDE0F1 !important; stroke: #111111 !important; stroke-width: 2.5 !important; }
+        .table { fill: #DCEBDF !important; stroke: #111111 !important; stroke-width: 2.5 !important; }
+        .pool { fill: #F2E6D8 !important; stroke: #111111 !important; stroke-width: 2.5 !important; }
+        .kernel { fill: #FFFFFF !important; stroke: #111111 !important; stroke-width: 2.5 !important; }
+        .blueFlow, .greenFlow, .goldFlow { stroke: #111111 !important; stroke-width: 3 !important; }
+        marker path { fill: #111111 !important; }
+        [stroke="#4f8fce" i], [stroke="#43a56c" i], [stroke="#d2a532" i], [stroke="#94a3b8" i] { stroke: #111111 !important; }
+        [fill="#F5F5F7" i] { fill: #FFFFFF !important; }
+        [fill="#172033" i] { fill: #111111 !important; }
+    </style>
+</svg>

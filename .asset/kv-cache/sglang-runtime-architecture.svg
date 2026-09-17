@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="780" viewBox="0 0 1200 780" role="img"
+    aria-labelledby="title desc">
+    <title id="title">SGLang 架构概览：Frontend、Runtime 与 Backend 协同</title>
+    <desc id="desc">上层是 SGLang Frontend，负责结构化程序与请求编排。中层是 Runtime，其中 Scheduler、RadixCache 与 Executor 双向协同，
+        并共享 TokenToKVPool。下层是模型执行后端，包含 CUDA kernels 与 PagedAttention，实现实际的 KV 读写与计算。</desc>
+
+    <defs>
+        <marker id="arrowBlue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7"
+            markerHeight="7" orient="auto">
+            <path d="M0 0 L10 5 L0 10 Z" fill="#0071E3" />
+        </marker>
+        <marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7"
+            markerHeight="7" orient="auto">
+            <path d="M0 0 L10 5 L0 10 Z" fill="#167333" />
+        </marker>
+        <marker id="arrowGold" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7"
+            markerHeight="7" orient="auto">
+            <path d="M0 0 L10 5 L0 10 Z" fill="#8A4B00" />
+        </marker>
+        <style>
+      text { font-family: Avenir Next, Segoe UI, sans-serif; letter-spacing: 0; }
+      .title { font-size: 30px; font-weight: 700; fill: #172033; }
+      .subtitle { font-size: 16px; fill: #526070; }
+      .heading { font-size: 19px; font-weight: 700; fill: #24324a; }
+      .label { font-size: 15px; font-weight: 700; fill: #334155; }
+      .body { font-size: 14px; fill: #334155; }
+      .small { font-size: 13px; fill: #6E6E73; }
+      .inverse { font-size: 14px; font-weight: 700; fill: #ffffff; }
+      .panel { fill: #ffffff; stroke: #D2D2D7; stroke-width: 1.5; }
+      .frontend { fill: #dbeafe; stroke: #4f8fce; stroke-width: 1.6; }
+      .runtime { fill: #dcfce7; stroke: #43a56c; stroke-width: 1.6; }
+      .backend { fill: #FFF4E5; stroke: #d2a532; stroke-width: 1.6; }
+      .core { fill: #eef2f7; stroke: #94a3b8; stroke-width: 1.4; }
+      .focus { fill: #EAF3FC; stroke: #0071E3; stroke-width: 1.8; }
+      .flowBlue { fill: none; stroke: #0071E3; stroke-width: 2.5; marker-end: url(#arrowBlue); }
+      .flowGreen { fill: none; stroke: #167333; stroke-width: 2.5; marker-end: url(#arrowGreen); }
+      .flowGold { fill: none; stroke: #8A4B00; stroke-width: 2.5; marker-end: url(#arrowGold); }
+    </style>
+    </defs>
+
+    <rect width="100%" height="100%" fill="#F5F5F7" />
+
+    <text x="600" y="48" text-anchor="middle" class="title">SGLang 架构概览</text>
+    <text x="600" y="78" text-anchor="middle" class="subtitle">结构化请求先经 Runtime 进行前缀复用与调度，再交给 PagedAttention 后端执行</text>
+
+    <rect x="100" y="112" width="1000" height="130" rx="10" class="frontend" />
+    <text x="130" y="146" class="heading">1 · SGLang Frontend</text>
+    <text x="130" y="176" class="label">Python DSL / Structured Programs</text>
+    <text x="130" y="202" class="body">负责多轮工作流、控制流与请求编排，生成可执行的 token 任务流。</text>
+    <rect x="850" y="156" width="220" height="62" rx="7" fill="#ffffff" stroke="#4f8fce"
+        stroke-width="1.4" />
+    <text x="960" y="181" text-anchor="middle" class="small">Prompt / Tool Calls / State</text>
+    <text x="960" y="204" text-anchor="middle" class="small">输入 Runtime</text>
+
+    <path d="M600 244 L600 278" class="flowBlue" />
+
+    <rect x="100" y="278" width="1000" height="290" rx="10" class="runtime" />
+    <text x="130" y="312" class="heading">2 · SGLang Runtime</text>
+    <text x="130" y="336" class="body">核心协同：Scheduler 决定每轮工作，RadixCache 负责最长前缀命中，Executor 执行 Prefill/Decode。</text>
+
+    <rect x="150" y="366" width="240" height="150" rx="8" class="core" />
+    <text x="270" y="394" text-anchor="middle" class="label">Scheduler</text>
+    <text x="170" y="422" class="small">- 选择本轮请求与 token budget</text>
+    <text x="170" y="444" class="small">- 处理 prefill / decode 切换</text>
+    <text x="170" y="466" class="small">- 协调抢占与恢复</text>
+
+    <rect x="480" y="350" width="240" height="182" rx="8" class="focus" />
+    <text x="600" y="378" text-anchor="middle" class="label">RadixCache</text>
+    <text x="600" y="400" text-anchor="middle" class="small">(RadixAttention)</text>
+    <text x="500" y="430" class="small">- match_prefix(tokens)</text>
+    <text x="500" y="452" class="small">- 维护 token -> block_ids 映射</text>
+    <text x="500" y="474" class="small">- LRU + 引用计数淘汰</text>
+    <rect x="500" y="488" width="200" height="30" rx="6" fill="#ffffff" stroke="#0071E3"
+        stroke-width="1.2" />
+    <text x="600" y="508" text-anchor="middle" class="small">Prefix Hit / Miss 决策点</text>
+
+    <rect x="810" y="366" width="240" height="150" rx="8" class="core" />
+    <text x="930" y="394" text-anchor="middle" class="label">Executor</text>
+    <text x="830" y="422" class="small">- 执行未命中前缀的 Prefill</text>
+    <text x="830" y="444" class="small">- 执行 Decode kernel 调用</text>
+    <text x="830" y="466" class="small">- 写回新生成 KV blocks</text>
+
+    <path d="M392 430 L478 430" class="flowBlue" />
+    <path d="M480 464 L394 464" class="flowGreen" />
+    <path d="M722 430 L808 430" class="flowBlue" />
+    <path d="M810 464 L724 464" class="flowGreen" />
+
+    <rect x="150" y="530" width="900" height="26" rx="6" fill="#ffffff" stroke="#43a56c"
+        stroke-width="1.2" />
+    <text x="600" y="548" text-anchor="middle" class="small">共享内存抽象：TokenToKVPool / Block Table / Request States</text>
+
+    <path d="M600 568 L600 602" class="flowGold" />
+
+    <rect x="100" y="602" width="1000" height="120" rx="10" class="backend" />
+    <text x="130" y="636" class="heading">3 · Model Execution Backend</text>
+    <text x="130" y="662" class="label">CUDA Kernels + PagedAttention</text>
+    <text x="130" y="686" class="body">根据 block table 做间接寻址，完成 K/V 收集、注意力计算与结果写回。</text>
+
+    <rect x="760" y="632" width="140" height="62" rx="7" fill="#ffffff" stroke="#d2a532"
+        stroke-width="1.3" />
+    <text x="830" y="658" text-anchor="middle" class="small">Prefill Kernels</text>
+    <text x="830" y="680" text-anchor="middle" class="small">(compute-bound)</text>
+
+    <rect x="920" y="632" width="150" height="62" rx="7" fill="#ffffff" stroke="#d2a532"
+        stroke-width="1.3" />
+    <text x="995" y="658" text-anchor="middle" class="small">Decode Kernels</text>
+    <text x="995" y="680" text-anchor="middle" class="small">(memory-bound)</text>
+
+    <rect x="100" y="736" width="1000" height="28" rx="6" fill="#172033" />
+    <text x="600" y="755" text-anchor="middle" class="inverse">RadixCache 负责“复用什么”，PagedAttention 负责“把它放在哪里并高效读写”</text>
+    <style id="editorial-diagram-style">
+        text { font-family: Helvetica Neue, Segoe UI, sans-serif; letter-spacing: 0; }
+        .title { fill: #111111 !important; font-weight: 800 !important; }
+        .subtitle, .small { fill: #333333 !important; }
+        .heading, .label { fill: #111111 !important; font-weight: 800 !important; }
+        .body { fill: #333333 !important; }
+        rect { rx: 3px; }
+        .panel { fill: #F4F4F4 !important; stroke: #111111 !important; stroke-width: 3 !important; }
+        .frontend { fill: #DDE0F1 !important; stroke: #111111 !important; stroke-width: 2.5 !important; }
+        .runtime { fill: #DCEBDF !important; stroke: #111111 !important; stroke-width: 2.5 !important; }
+        .backend { fill: #F2E6D8 !important; stroke: #111111 !important; stroke-width: 2.5 !important; }
+        .core, .focus { fill: #FFFFFF !important; stroke: #111111 !important; stroke-width: 2.5 !important; }
+        .flowBlue, .flowGreen, .flowGold { stroke: #111111 !important; stroke-width: 3 !important; }
+        marker path { fill: #111111 !important; }
+        [stroke="#4f8fce" i], [stroke="#43a56c" i], [stroke="#d2a532" i], [stroke="#94a3b8" i], [stroke="#0071E3" i] { stroke: #111111 !important; }
+        [fill="#F5F5F7" i] { fill: #FFFFFF !important; }
+        [fill="#172033" i] { fill: #111111 !important; }
+    </style>
+</svg>

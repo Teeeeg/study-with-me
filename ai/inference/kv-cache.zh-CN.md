@@ -659,29 +659,9 @@ SGLang（Structured Generation Language）是由 UC Berkeley 团队开发的高�
 
 SGLang 的定位是**结构化语言模型程序的高效执行引擎**。它支持复杂的控制流（如循环、分支）、多次生成调用的复合任务，并通过 RadixAttention 实现跨调用的 KV Cache 自动复用。
 
-```text
-SGLang 架构概览：
+SGLang 架构概览如下图：
 
-┌───────────────────────────────────────────────────────────┐
-│                     SGLang Frontend                       │
-│       (Python DSL for structured LLM programs)            │
-└───────────────────────────────────────────────────────────┘
-                            │
-                            ▼
-┌───────────────────────────────────────────────────────────┐
-│                     SGLang Runtime                        │
-│  ┌─────────────┐  ┌─────────────────┐  ┌─────────────┐    │
-│  │  Scheduler  │◄─┤   RadixCache    ├─►│   Executor  │    │
-│  │             │  │ (RadixAttention)│  │             │    │
-│  └─────────────┘  └─────────────────┘  └─────────────┘    │
-└───────────────────────────────────────────────────────────┘
-                            │
-                            ▼
-┌───────────────────────────────────────────────────────────┐
-│                Model Execution Backend                    │
-│           (CUDA Kernels, PagedAttention)                  │
-└───────────────────────────────────────────────────────────┘
-```
+![SGLang 架构：Frontend、Runtime 与 Backend 协同](../../.asset/kv-cache/sglang-runtime-architecture.svg)
 
 RadixAttention 位于 SGLang Runtime 的核心位置，负责：
 
@@ -689,138 +669,79 @@ RadixAttention 位于 SGLang Runtime 的核心位置，负责：
 2. 为每个请求提供前缀匹配查询
 3. 协调 KV Cache Block 的分配与淘汰
 
-#### 3.2 核心数据结构
 
-SGLang 中的 RadixAttention 实现涉及三个核心数据结构：RadixCache 主类、TreeNode 节点结构以及内存池管理器。
+#### 3.2 与 PagedAttention 的集成
 
-##### 3.2.1 RadixCache 类
+RadixAttention 负责**组织和复用逻辑前缀**，PagedAttention 负责**在物理 KV Cache 中定位并读写这些前缀**。两者通过以下三个组件连接：
 
-`RadixCache` 是 RadixAttention 的主类，持有 Radix Tree 根节点、Token Pool、KV Cache Pool 和缓存命中统计，并封装前缀匹配、序列插入与 LRU 淘汰操作。
+![SGLang RadixAttention 与 PagedAttention 的组件关系](../../.asset/kv-cache/sglang-radix-paged-integration.svg)
 
-##### 3.2.2 TreeNode 结构
+1. **RadixCache**：节点保存 token 片段及其对应的 Block ID。它保存的是逻辑到物理的映射，不直接持有 KV 张量或裸显存地址。
+2. **TokenToKVPool**：统一管理 KV Cache Blocks 的分配、回收和实际存储。多个请求可以通过引用计数共享已经命中的物理 block。
+3. **Block Table**：为当前请求维护逻辑 block 到物理 block 的对应关系，Attention kernel 根据它读取不连续的 KV 数据。
 
-每个 `TreeNode` 代表 Radix Tree 中的一个节点，保存子节点映射、父节点引用、压缩后的 token 路径、对应的 KV Cache Block 索引、引用计数和最后访问时间。
+一次请求的处理过程可以分为四步：
 
-##### 3.2.3 内存池管理
+![SGLang 请求的前缀匹配、Prefill 与 KV Cache 写回流程](../../.asset/kv-cache/sglang-request-cache-flow.svg)
 
-SGLang 使用专门的内存池管理 KV Cache Blocks：
+1. **匹配前缀**：Runtime 调用 `match_prefix(tokens)`，从 RadixCache 找到最长的已缓存前缀，得到命中的节点、前缀长度和对应的 `block_ids`。
+2. **装载映射**：Scheduler 将命中的 `block_ids` 写入当前请求的 Block Table 前缀位置；这些 token 不需要再次执行 Prefill。
+3. **计算未命中部分**：Executor 只对 `tokens[prefix_len:]` 执行 Prefill，并从 TokenToKVPool 申请新的物理 blocks，把计算得到的 K/V 写入这些 blocks。
+4. **登记新缓存**：Prefill 完成后，Runtime 用 `insert(node, tokens[prefix_len:], new_block_ids)` 将新 token 与物理 blocks 加入 RadixCache，供后续请求匹配复用。
 
-- **Token Pool**：管理 token 序列到物理位置的映射
-- **KV Pool**：管理实际的 KV Cache 显存分配
-
-#### 3.3 关键操作实现
-
-本节详细分析 RadixCache 的四个关键操作：前缀匹配、插入、LRU 淘汰以及并发控制。
-
-##### 3.3.1 前缀匹配：match_prefix()
-
-前缀匹配是系统处理新请求时的首个操作。该方法从根节点开始遍历 Radix Tree，按 token 比较节点内的压缩路径，直到遇到不匹配位置，并返回最后匹配的节点和前缀长度。
-
-##### 3.3.2 插入操作：insert()
-
-当处理完未命中的前缀并生成新的 KV Cache 后，系统从最后匹配节点开始插入剩余 token。若新序列与现有子节点只部分匹配，则在最长公共前缀处拆分节点；若没有对应子节点，则直接为剩余后缀创建新节点。
-
-##### 3.3.3 LRU 淘汰：evict()
-
-当系统显存不足时，将触发 LRU 淘汰机制。系统按最后访问时间排序叶子节点，跳过仍被引用的节点，并持续释放最久未使用节点的 KV Cache，直到达到目标容量。
-
-##### 3.3.4 并发控制
-
-SGLang 使用**节点级锁**来支持并发访问。请求使用某个节点时，会沿父链增加引用计数；请求结束时沿相同路径减少引用计数，从而保护整条共享前缀路径不被淘汰。
-
-##### 3.3.5 节点分裂的开销与优化
-
-在实际运行中，动态负载下的前缀缓存管理不仅需要考虑查找效率，还需要评估树结构维护的代价。由于每次插入未匹配的新序列可能触发节点分裂（`_split_node`），这会涉及字典修改和锁持有。SGLang 通过节点内预留空间（Slack）或仅在 Prefill 阶段后批量插入来平摊此开销。
-
-#### 3.4 与 PagedAttention 的集成
-
-RadixAttention 与 PagedAttention 紧密集成，共同实现高效的 KV Cache 管理：
-
-1. **Block 粒度对齐**：RadixCache 中的 value 存储的是 Block ID 而非原始显存地址。
-2. **统一的内存池**：KV Cache Blocks 由 `TokenToKVPool` 统一管理。
-3. **Block Table 更新**：Prefill 完成后，Block Table 自动更新以包含新生成的 KV Cache。
-
-```text
-请求处理流程：
-
-1. match_prefix(tokens) → (node, prefix_len, block_ids)
-2. 将 block_ids 加载到 Block Table 的前 prefix_len 位置
-3. 仅对 tokens[prefix_len:] 执行 Prefill
-4. 将新生成的 KV Cache 存入新分配的 Blocks
-5. insert(node, tokens[prefix_len:], new_block_ids)
-```
+因此，RadixCache 决定“哪些前缀可以复用”，Block Table 决定“当前请求从哪里读”，而 PagedAttention kernel 负责“如何高效地读写这些分散的 KV blocks”。
 
 ---
 
-### 4. vLLM 的 Automatic Prefix Caching (APC) 对比
+### 4. 与 vLLM Automatic Prefix Caching 的区别
 
-vLLM 从 v0.4.0 开始引入了 Automatic Prefix Caching (APC) 功能，实现了类似 RadixAttention 的前缀缓存能力，但采用了不同的技术方案。本章将对比分析两者的异同。
+vLLM 从 v0.4.0 起提供 Automatic Prefix Caching（APC），它和 RadixAttention 要解决的是同一个问题：**共享前缀已经算过，后续请求不该再算一遍。** 两者的物理层也是同一套——命中的 K/V 都留在分页 KV block 里，由引用计数共享，从不复制。
 
-#### 4.1 vLLM 的技术选型：Hash Table vs Radix Tree
+所以真正的区别只有一处：**用什么结构记住"哪些前缀已经缓存过"。**
 
-vLLM 的 APC 与 SGLang 的 RadixAttention 在功能上相似，但在底层数据结构上做出了不同的选择。本节分析 vLLM 选择哈希表的原因及其设计细节。
+![RadixAttention 的 token 路径索引与 vLLM APC 的 block 哈希索引对比](../../.asset/kv-cache/radix-vs-hash-prefix-index.svg)
 
-##### 4.1.1 为什么 vLLM 选择 Hash Table
+#### 4.1 两种索引结构
 
-vLLM 没有采用 Radix Tree，而是选择了**基于哈希表的增量哈希链**方案。主要考量包括：
+**RadixAttention：树路径就是前缀身份。** 节点保存连续 token 片段和等长的 KV 位置索引，从根走到某个节点的路径，就唯一确定了这段前缀。匹配即遍历，走过的最长路径就是可复用的最长前缀（见前文《前缀匹配与查找算法》）。
 
-1. **与 Block Manager 的集成**：vLLM 的 PagedAttention 已经以 Block 为粒度管理 KV Cache，哈希表可以直接以 Block Hash 为键。
-2. **实现复杂度**：哈希表的实现比 Radix Tree 更简单，易于维护。
-3. **内存开销**：哈希表的额外内存开销通常低于树结构。
+**vLLM APC：链式哈希就是前缀身份。** vLLM 的 KV Cache 本就以 block 为单位分配和回收，APC 直接复用这套结构：为每个**填满的** block 计算 $H_i=\operatorname{hash}(H_{i-1},\ tokens_i,\ extra)$，以它为键查哈希表（见前文《Automatic Prefix Caching 如何复用 block》）。$H_{i-1}$ 把全部前文压进当前 block 的身份，因此前面一旦分歧，后面即使 token 完全相同也不会误命中。
 
-##### 4.1.2 增量哈希链设计
+vLLM 没有选 Radix Tree，主要不是因为树"不好"，而是因为它的 block manager 已经提供了分配、引用计数和回收，缓存索引挂在 block 哈希上即可复用这一切，不必再维护一棵需要分裂、合并和路径压缩的树。
 
-vLLM 的 APC 使用**增量哈希**确保前缀依赖：
+#### 4.2 区别体现在四个地方
 
-$$
-H_0 = Hash(Chunk_0)
-$$
+1. **匹配粒度：token vs block。** Radix Tree 允许分歧发生在节点内部的任意 token，节点随之分裂；APC 的最小单位是一个 block（通常 16 个 token），只要分歧落在 block 内部，整个 block 就算未命中。共享 1000 个 token、在第 1001 个才分歧时，两者差别可以忽略；而共享前缀只有 20 个 token 时，block 级索引可能一无所获。
 
-$$
-H_i = Hash(H_{i-1}, Chunk_i), \quad i > 0
-$$
+2. **未对齐的尾部能否复用。** Radix 节点不要求对齐，请求算完的最后一段 token 可以立刻进树；APC 只有填满的 block 才有稳定哈希，未填满的尾块不参与匹配，要等它被填满后才可能进入缓存——前文 Chunked Prefill 要求 chunk 对齐到 `block_size`，也是同一个约束的延伸。
 
-> 注：生产环境多使用 XXHash 等高性能哈希算法以避免 Python 对象开销。
+3. **淘汰的单位不同。** RadixAttention 从引用计数为 0 的**叶子节点**开始 LRU，删除后还要考虑路径重新压缩，因为中间节点可能被多个后缀共享；APC 直接对引用计数为 0 的**block** 做 LRU，block 之间没有父子关系，回收逻辑更简单。
 
-这种设计保证了：
+4. **前缀身份里能装什么。** APC 的 `extra` 可以把 LoRA adapter、多模态输入哈希和 cache salt 一并算进键里，隔离边界由键本身表达；RadixAttention 的身份来自 token 路径本身，这类隔离需要在树之外解决（例如按维度分树）。
 
-- 相同的前缀 → 相同的哈希链
-- 不同的前缀 → 不同的哈希值（即使当前 Block 内容相同）
+#### 4.3 维度对照
 
-##### 4.1.3 缓存查找流程
+| 维度                 | RadixAttention (SGLang)          | APC (vLLM)                            |
+| -------------------- | -------------------------------- | ------------------------------------- |
+| **索引结构**         | Radix Tree，节点存连续 token 片段 | 哈希表，键为 block 的链式哈希         |
+| **匹配粒度**         | Token 级                         | Block 级（通常 16 tokens）            |
+| **最长前缀匹配**     | 树遍历天然得到                   | 逐 block 查表，首个 miss 即停止       |
+| **未对齐的尾部前缀** | 节点分裂后仍可复用               | 未填满的 block 不参与匹配             |
+| **淘汰单位**         | 引用计数为 0 的叶子节点          | 引用计数为 0 的 block                 |
+| **前缀身份**         | 根到节点的路径                   | 链式哈希，可纳入 LoRA / 多模态 / salt |
+| **实现复杂度**       | 较高：分裂、合并、路径压缩       | 较低：复用已有 block manager          |
+| **物理存储**         | 分页 KV block + 引用计数         | 分页 KV block + 引用计数              |
 
-vLLM 的缓存查找过程基于增量哈希链，按 Block 粒度逐个计算并查询哈希值；一旦某个 Block 未命中，由于后续哈希依赖当前哈希，查找即可提前终止。
+最后一行是关键：两者在**怎么存**上并无区别，区别只在**怎么找**。
 
-#### 4.2 两种方案的对比分析
+#### 4.4 什么时候差距才明显
 
-SGLang 的 RadixAttention 与 vLLM 的 APC 在设计理念和数据结构上各有侧重，以下是这两种方案在多个维度上的详细对比：
+差距取决于**前缀是否规整**：
 
-| 维度               | RadixAttention (SGLang)      | APC (vLLM)                                     |
-| ------------------ | ---------------------------- | ---------------------------------------------- |
-| **数据结构**       | Radix Tree（压缩前缀树）     | Hash Table（哈希表）                           |
-| **索引粒度**       | Token 级别                   | Block 级别（16-32 tokens）                     |
-| **查找方式**       | 树遍历，天然支持最长前缀匹配 | 逐 Block 哈希查找                              |
-| **内存开销**       | 较高（树节点、指针）         | 较低（仅哈希表条目）                           |
-| **动态前缀**       | 任意位置分支，灵活性高       | 需 Block 对齐，灵活性稍低                      |
-| **内存碎片化倾向** | 低（Block 连续分配）         | 中（Block 离散分配，依赖 PagedAttention 回收） |
-| **实现复杂度**     | 较高（节点分裂、合并）       | 较低（标准哈希表操作）                         |
-| **并发支持**       | 需要细粒度锁                 | 通过引用计数管理                               |
+- **前缀长且固定**（固定 System Prompt、长文档 RAG）：分歧点基本落在共享段之后，block 级索引已经够用，APC 用更低的实现与维护成本拿到几乎相同的命中率。
+- **前缀短、分支多、变化频繁**（结构化生成、Agent 多轮分支、并行采样）：分歧点密集且不对齐 block 边界，token 级的树能多复用一段，也能在同一前缀上挂更多分支，RadixAttention 的收益更大——这正是 SGLang 的目标负载。
 
-##### 4.2.1 适用场景对比
-
-根据两种方案的特性差异，它们在不同的业务场景中各有优势。以下是它们的主要适用场景对比：
-
-**RadixAttention 更适合**：
-
-- 高度动态的工作负载（前缀频繁变化）
-- 需要细粒度（token 级）缓存控制的场景
-- 复杂的结构化生成程序（SGLang 的核心用例）
-
-**vLLM APC 更适合**：
-
-- 前缀相对固定的场景（如固定 System Prompt）
-- 追求实现简洁性和与现有系统集成
-- Block 对齐不造成显著浪费的场景
+因此这不是"谁更先进"，而是两个引擎针对各自主场负载做出的不同取舍。
 
 
 
