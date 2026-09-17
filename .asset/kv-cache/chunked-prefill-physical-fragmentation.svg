@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="650" viewBox="0 0 1200 650" role="img"
+    aria-labelledby="title desc">
+    <title id="title">Chunk 之间的 KV Cache 物理块可以不连续</title>
+    <desc id="desc">请求 A 的三个逻辑 chunk 分别映射到物理块组 7、19、3。其他请求在 chunk 间分配和释放显存，使这些物理块彼此分散；PagedAttention
+        通过 block table 保持逻辑顺序，无需搬移已有 KV。</desc>
+    <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+            orient="auto">
+            <path d="M0 0 L10 5 L0 10 Z" fill="#111111" />
+        </marker>
+        <style>
+      text { font-family: Helvetica Neue, Segoe UI, sans-serif; letter-spacing: 0; }
+      .title { font-size: 32px; font-weight: 800; fill: #111111; }
+      .subtitle { font-size: 16px; fill: #333333; }
+      .heading { font-size: 20px; font-weight: 800; fill: #111111; }
+      .label { font-size: 15px; font-weight: 750; fill: #111111; }
+      .body { font-size: 14px; fill: #333333; }
+      .small { font-size: 13px; fill: #444444; }
+      .panel { fill: #F4F4F4; stroke: #111111; stroke-width: 3; }
+      .a1 { fill: #DDE0F1; stroke: #111111; stroke-width: 2.5; }
+      .a2 { fill: #DCEBDF; stroke: #111111; stroke-width: 2.5; }
+      .a3 { fill: #F2E6D8; stroke: #111111; stroke-width: 2.5; }
+      .other { fill: #FFFFFF; stroke: #777777; stroke-width: 2; }
+      .free { fill: #FFFFFF; stroke: #999999; stroke-width: 1.5; stroke-dasharray: 6 4; }
+      .note { fill: #E9D9EB; stroke: #111111; stroke-width: 2.5; }
+      .arrow { fill: none; stroke: #111111; stroke-width: 3; marker-end: url(#arrow); }
+    </style>
+    </defs>
+
+    <rect width="1200" height="650" fill="#FFFFFF" />
+    <text x="600" y="46" text-anchor="middle" class="title">派生问题二：逻辑连续，物理块可以分散</text>
+    <text x="600" y="76" text-anchor="middle" class="subtitle">Chunk 间穿插其他请求，会让新增 KV blocks 落到不同物理位置</text>
+
+    <rect x="48" y="108" width="1104" height="138" rx="3" class="panel" />
+    <text x="76" y="145" class="heading">请求 A 的逻辑顺序</text>
+    <g transform="translate(270 160)">
+        <rect x="0" y="0" width="220" height="58" rx="3" class="a1" />
+        <text x="110" y="35" text-anchor="middle" class="label">Chunk 1</text>
+        <path d="M232 29 H276" class="arrow" />
+        <rect x="290" y="0" width="220" height="58" rx="3" class="a2" />
+        <text x="400" y="35" text-anchor="middle" class="label">Chunk 2</text>
+        <path d="M522 29 H566" class="arrow" />
+        <rect x="580" y="0" width="220" height="58" rx="3" class="a3" />
+        <text x="690" y="35" text-anchor="middle" class="label">Chunk 3</text>
+    </g>
+
+    <rect x="48" y="274" width="1104" height="242" rx="3" class="panel" />
+    <text x="76" y="312" class="heading">共享物理 block 池</text>
+    <text x="76" y="340" class="body">A 每次追加时使用当时可用的空闲块，不要求与上一 chunk 相邻</text>
+    <g transform="translate(76 368)">
+        <rect x="0" y="0" width="88" height="54" rx="3" class="other" />
+        <text x="44" y="33" text-anchor="middle" class="small">#0 · B</text>
+        <rect x="98" y="0" width="88" height="54" rx="3" class="free" />
+        <text x="142" y="33" text-anchor="middle" class="small">#1 · 空</text>
+        <rect x="196" y="0" width="88" height="54" rx="3" class="a3" />
+        <text x="240" y="33" text-anchor="middle" class="label">#3 · A3</text>
+        <rect x="294" y="0" width="88" height="54" rx="3" class="other" />
+        <text x="338" y="33" text-anchor="middle" class="small">#4 · C</text>
+        <rect x="392" y="0" width="88" height="54" rx="3" class="free" />
+        <text x="436" y="33" text-anchor="middle" class="small">#5 · 空</text>
+        <rect x="490" y="0" width="88" height="54" rx="3" class="a1" />
+        <text x="534" y="33" text-anchor="middle" class="label">#7 · A1</text>
+        <rect x="588" y="0" width="88" height="54" rx="3" class="other" />
+        <text x="632" y="33" text-anchor="middle" class="small">#8 · D</text>
+        <rect x="686" y="0" width="88" height="54" rx="3" class="free" />
+        <text x="730" y="33" text-anchor="middle" class="small">#9 · 空</text>
+        <rect x="784" y="0" width="88" height="54" rx="3" class="a2" />
+        <text x="828" y="33" text-anchor="middle" class="label">#19 · A2</text>
+        <rect x="882" y="0" width="88" height="54" rx="3" class="other" />
+        <text x="926" y="33" text-anchor="middle" class="small">#20 · E</text>
+    </g>
+    <rect x="270" y="445" width="660" height="46" rx="3" class="note" />
+    <text x="600" y="474" text-anchor="middle" class="label">A 的 block table：Chunk 1 → #7，Chunk 2 →
+        #19，Chunk 3 → #3</text>
+
+    <rect x="48" y="544" width="1104" height="76" rx="3" class="note" />
+    <text x="600" y="574" text-anchor="middle" class="label">PagedAttention 保持逻辑顺序，不需要整理或搬移已有 KV</text>
+    <text x="600" y="598" text-anchor="middle" class="body">物理不连续不影响正确性；代价是通过 block table
+        间接寻址，而非要求一段连续显存</text>
+</svg>

@@ -31,7 +31,7 @@
       </a>
 
       <nav class="topnav" aria-label="{{ t.sections }}">
-        <a href="{{ homePage.url | url }}"{% if ref == 'home' %} aria-current="page"{% endif %}>{{ t.home }}</a>
+        <a href="{{ homePage.url | url }}"{% if ref == 'home' %} aria-current="page"{% endif %}>{{ t.knowledge or t.home }}</a>
       </nav>
 
       <a class="lang-switch" href="{{ switchUrl | url }}"

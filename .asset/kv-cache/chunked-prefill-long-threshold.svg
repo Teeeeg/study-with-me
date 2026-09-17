@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="650" viewBox="0 0 1200 650" role="img"
+    aria-labelledby="title desc">
+    <title id="title">long_prefill_token_threshold 限制长 Prompt 每轮占用的 token budget</title>
+    <desc id="desc">长请求 A 的剩余 Prefill 超过阈值，因此本轮最多调度 threshold 个 token；短请求 B 可以使用剩余 token budget
+        并更早完成 Prefill，避免被长请求持续阻塞。</desc>
+    <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+            orient="auto">
+            <path d="M0 0 L10 5 L0 10 Z" fill="#111111" />
+        </marker>
+        <style>
+      text { font-family: Helvetica Neue, Segoe UI, sans-serif; letter-spacing: 0; }
+      .title { font-size: 32px; font-weight: 800; fill: #111111; }
+      .subtitle { font-size: 16px; fill: #333333; }
+      .heading { font-size: 20px; font-weight: 800; fill: #111111; }
+      .label { font-size: 15px; font-weight: 750; fill: #111111; }
+      .body { font-size: 14px; fill: #333333; }
+      .small { font-size: 13px; fill: #444444; }
+      .panel { fill: #F4F4F4; stroke: #111111; stroke-width: 3; }
+      .long { fill: #DDE0F1; stroke: #111111; stroke-width: 2.5; }
+      .short { fill: #DCEBDF; stroke: #111111; stroke-width: 2.5; }
+      .deferred { fill: #FFFFFF; stroke: #777777; stroke-width: 2; stroke-dasharray: 7 5; }
+      .budget { fill: #E9D9EB; stroke: #111111; stroke-width: 2.5; }
+      .note { fill: #F2E6D8; stroke: #111111; stroke-width: 2.5; }
+      .arrow { fill: none; stroke: #111111; stroke-width: 3; marker-end: url(#arrow); }
+    </style>
+    </defs>
+
+    <rect width="1200" height="650" fill="#FFFFFF" />
+    <text x="600" y="46" text-anchor="middle" class="title">派生问题三：限制长 Prompt 每轮吃掉的预算</text>
+    <text x="600" y="76" text-anchor="middle" class="subtitle">long_prefill_token_threshold 为长请求设置单轮
+        Prefill 上限</text>
+
+    <rect x="48" y="108" width="1104" height="132" rx="3" class="panel" />
+    <text x="76" y="146" class="heading">等待队列</text>
+    <rect x="230" y="132" width="520" height="76" rx="3" class="long" />
+    <text x="490" y="162" text-anchor="middle" class="label">请求 A · 长 Prompt</text>
+    <text x="490" y="187" text-anchor="middle" class="body">剩余 Prefill 16K tokens · 超过 threshold</text>
+    <rect x="774" y="132" width="326" height="76" rx="3" class="short" />
+    <text x="937" y="162" text-anchor="middle" class="label">请求 B · 短 Prompt</text>
+    <text x="937" y="187" text-anchor="middle" class="body">Prefill 512 tokens</text>
+
+    <path d="M600 240 V278" class="arrow" />
+
+    <rect x="48" y="282" width="1104" height="222" rx="3" class="panel" />
+    <text x="76" y="320" class="heading">本轮 token budget</text>
+    <rect x="76" y="346" width="1024" height="72" rx="3" class="budget" />
+    <rect x="76" y="346" width="690" height="72" rx="3" class="long" />
+    <text x="421" y="376" text-anchor="middle" class="label">A：最多调度 threshold tokens</text>
+    <text x="421" y="400" text-anchor="middle" class="small">长请求被截断，剩余部分留到下一轮</text>
+    <rect x="766" y="346" width="334" height="72" rx="3" class="short" />
+    <text x="933" y="376" text-anchor="middle" class="label">B：使用剩余预算</text>
+    <text x="933" y="400" text-anchor="middle" class="small">短 Prompt 可在本轮完成</text>
+
+    <rect x="76" y="442" width="690" height="38" rx="3" class="deferred" />
+    <text x="421" y="467" text-anchor="middle" class="body">A 未完成的 Prefill → 返回 running 队列</text>
+    <rect x="790" y="442" width="286" height="38" rx="3" class="short" />
+    <text x="933" y="467" text-anchor="middle" class="label">B 更早进入 Decode</text>
+
+    <rect x="48" y="534" width="1104" height="86" rx="3" class="note" />
+    <text x="600" y="565" text-anchor="middle" class="label">这是调度公平性策略，不是 KV Cache 压缩技术</text>
+    <text x="600" y="591" text-anchor="middle" class="body">它限制长请求单轮新增的 KV
+        blocks，并让短请求有机会绕过长队头，从而改善短请求 TTFT</text>
+</svg>

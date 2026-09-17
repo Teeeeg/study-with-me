@@ -2,7 +2,8 @@ en:
   title: Study With Me
   tagline: Learning notes on AI, systems, and everything in between.
   contents: Contents
-  home: Home
+  knowledge: Knowledge
+  home: Knowledge
   switch: 中文
   switch_title: 切换到中文
   sections: Sections
@@ -12,7 +13,8 @@ zh:
   title: 一起学
   tagline: 关于 AI、系统，以及路上遇到的一切的学习笔记。
   contents: 目录
-  home: 首页
+  knowledge: 知识
+  home: 知识
   switch: English
   switch_title: Switch to English
   sections: 章节

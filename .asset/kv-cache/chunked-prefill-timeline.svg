@@ -1,132 +1,125 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" role="img"
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="780" viewBox="0 0 1200 780" role="img"
     aria-labelledby="title desc">
     <title id="title">传统 Prefill 与 Chunked Prefill 调度对比</title>
-    <desc id="desc">传统 Prefill 长时间独占 GPU 并一次性分配 KV Cache；Chunked Prefill 将 Prompt 分成四块，与其他请求的 Decode
-        交替执行，同时逐批增加 KV Cache。</desc>
+    <desc id="desc">传统 Prefill 在一条 GPU 时间线上连续处理完整 Prompt，其他请求只能等待，并一次性申请 512 个 KV blocks。Chunked
+        Prefill 将 Prompt 分为四段，在段间插入其他请求的 Decode，并按 128、256、384、512 个 blocks 逐步增加 KV Cache。</desc>
     <defs>
         <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
             orient="auto">
-            <path d="M0 0 L10 5 L0 10 Z" fill="#6E6E73" />
+            <path d="M0 0 L10 5 L0 10 Z" fill="#111111" />
         </marker>
         <style>
-      text { font-family: Avenir Next, Segoe UI, sans-serif; letter-spacing: 0; }
-      .title { font-size: 30px; font-weight: 700; fill: #172033; }
-      .subtitle { font-size: 16px; fill: #526070; }
-      .section { font-size: 20px; font-weight: 700; fill: #24324a; }
-      .label { font-size: 15px; font-weight: 700; fill: #334155; }
-      .body { font-size: 14px; fill: #334155; }
-      .small { font-size: 13px; fill: #6E6E73; }
-      .inverse { font-size: 14px; font-weight: 700; fill: #ffffff; }
-      .axis { stroke: #94a3b8; stroke-width: 2; marker-end: url(#arrow); }
-      .guide { stroke: #d6dee9; stroke-width: 1; stroke-dasharray: 5 5; }
-      .prefill { fill: #0071E3; }
-      .chunk-a { fill: #0071E3; }
-      .chunk-b { fill: #4f91c8; }
-      .decode { fill: #167333; }
-      .idle { fill: #e8edf3; }
-      .cache { fill: #e9b949; stroke: #8A4B00; stroke-width: 1; }
-      .panel { fill: #ffffff; stroke: #c8d2df; stroke-width: 1.5; }
-      .callout { fill: #f7fafc; stroke: #9cabbc; stroke-width: 1.5; }
+            text { font-family: Helvetica Neue, Segoe UI, sans-serif; letter-spacing: 0; }
+            .title { font-size: 32px; font-weight: 800; fill: #111111; }
+            .subtitle { font-size: 16px; fill: #333333; }
+            .heading { font-size: 21px; font-weight: 800; fill: #111111; }
+            .label { font-size: 15px; font-weight: 750; fill: #111111; }
+            .body { font-size: 14px; fill: #222222; }
+            .small { font-size: 13px; fill: #444444; }
+            .tiny { font-size: 12px; fill: #444444; }
+            .panel { fill: #F4F4F4; stroke: #111111; stroke-width: 3; }
+            .prefill { fill: #DDE0F1; stroke: #111111; stroke-width: 2.5; }
+            .decode { fill: #DCEBDF; stroke: #111111; stroke-width: 2.5; }
+            .cache { fill: #E9D9EB; stroke: #111111; stroke-width: 2.5; }
+            .empty { fill: #FFFFFF; stroke: #999999; stroke-width: 1.5; }
+            .note { fill: #F2E6D8; stroke: #111111; stroke-width: 2.5; }
+            .axis { fill: none; stroke: #111111; stroke-width: 3; marker-end: url(#arrow); }
     </style>
     </defs>
-  <rect width="100%" height="100%" fill="#F5F5F7"/>
 
-    <rect width="1200" height="760" fill="#F5F5F7" />
-    <text x="600" y="46" text-anchor="middle" class="title">Chunked Prefill：把一段长计算拆进调度时间线</text>
-    <text x="600" y="76" text-anchor="middle" class="subtitle">Prompt 总计算量基本不变，但 GPU 占用与 KV Cache
-        分配从“一次完成”变为“逐步推进”</text>
+    <rect width="1200" height="780" fill="#FFFFFF" />
+    <text x="600" y="44" text-anchor="middle" class="title">Chunked Prefill：把长任务切开，让 Decode 穿插执行</text>
+    <text x="600" y="72" text-anchor="middle" class="subtitle">Prompt 的总计算量基本不变，改变的是 GPU 调度方式与 KV
+        Cache 的分配时机</text>
 
-    <rect x="55" y="105" width="1090" height="202" rx="8" class="panel" />
-    <text x="82" y="137" class="section">传统 Prefill</text>
-    <text x="82" y="160" class="small">一个长 Prompt 连续占用计算时段</text>
+    <rect x="48" y="102" width="1104" height="214" rx="3" class="panel" />
+    <text x="76" y="138" class="heading">传统 Prefill：长 Prompt 连续占用 GPU</text>
+    <text x="76" y="164" class="small">同一时刻 GPU 只执行一个时段；其他请求必须等到完整 Prefill 结束</text>
 
-    <text x="82" y="205" class="label">长请求 A</text>
-    <rect x="205" y="180" width="800" height="50" rx="5" class="prefill" />
-    <text x="605" y="211" text-anchor="middle" class="inverse">完整 Prefill：token 0–8191</text>
-    <rect x="1005" y="180" width="82" height="50" rx="5" class="decode" />
-    <text x="1046" y="211" text-anchor="middle" class="inverse">Decode</text>
+    <text x="76" y="215" class="label">GPU 时间线</text>
+    <rect x="190" y="186" width="760" height="58" rx="3" class="prefill" />
+    <text x="570" y="210" text-anchor="middle" class="label">请求 A · 完整 Prefill</text>
+    <text x="570" y="231" text-anchor="middle" class="small">token 0–8191</text>
+    <rect x="950" y="186" width="134" height="58" rx="3" class="decode" />
+    <text x="1017" y="210" text-anchor="middle" class="label">B/C Decode</text>
+    <text x="1017" y="231" text-anchor="middle" class="small">延后执行</text>
 
-    <text x="82" y="270" class="label">请求 B/C</text>
-    <rect x="205" y="245" width="800" height="50" rx="5" class="idle" />
-    <text x="605" y="276" text-anchor="middle" class="body">等待：Decode 被长 Prefill 阻塞</text>
-    <line x1="205" y1="297" x2="1100" y2="297" class="axis" />
-    <text x="1110" y="302" class="small">时间</text>
+    <text x="76" y="281" class="label">KV Cache</text>
+    <rect x="190" y="260" width="894" height="36" rx="3" class="cache" />
+    <text x="637" y="283" text-anchor="middle" class="label">开始前一次性申请 512 blocks</text>
+    <path d="M190 307 H1095" class="axis" />
+    <text x="1102" y="312" class="tiny">时间</text>
 
-    <rect x="55" y="330" width="1090" height="232" rx="8" class="panel" />
-    <text x="82" y="362" class="section">Chunked Prefill</text>
-    <text x="82" y="385" class="small">同一 Prompt 拆成多个 chunk，调度器可在间隙服务其他请求</text>
+    <rect x="48" y="340" width="1104" height="314" rx="3" class="panel" />
+    <text x="76" y="376" class="heading">Chunked Prefill：在同一条 GPU 时间线上交替执行</text>
+    <text x="76" y="402" class="small">请求 A 仍需完成全部四个 chunk；空出的调度间隙用于服务其他请求</text>
 
-    <text x="82" y="430" class="label">长请求 A</text>
-    <rect x="205" y="405" width="180" height="50" rx="5" class="chunk-a" />
-    <rect x="425" y="405" width="180" height="50" rx="5" class="chunk-b" />
-    <rect x="645" y="405" width="180" height="50" rx="5" class="chunk-a" />
-    <rect x="865" y="405" width="180" height="50" rx="5" class="chunk-b" />
-    <text x="295" y="425" text-anchor="middle" class="inverse">Chunk 1</text>
-    <text x="295" y="444" text-anchor="middle" class="inverse">0–2047</text>
-    <text x="515" y="425" text-anchor="middle" class="inverse">Chunk 2</text>
-    <text x="515" y="444" text-anchor="middle" class="inverse">2048–4095</text>
-    <text x="735" y="425" text-anchor="middle" class="inverse">Chunk 3</text>
-    <text x="735" y="444" text-anchor="middle" class="inverse">4096–6143</text>
-    <text x="955" y="425" text-anchor="middle" class="inverse">Chunk 4</text>
-    <text x="955" y="444" text-anchor="middle" class="inverse">6144–8191</text>
+    <text x="76" y="454" class="label">GPU 时间线</text>
+    <g transform="translate(190 425)">
+        <rect x="0" y="0" width="170" height="58" rx="3" class="prefill" />
+        <text x="85" y="24" text-anchor="middle" class="label">A · Chunk 1</text>
+        <text x="85" y="45" text-anchor="middle" class="tiny">0–2047</text>
+        <rect x="170" y="0" width="58" height="58" rx="3" class="decode" />
+        <text x="199" y="35" text-anchor="middle" class="label">D</text>
+        <rect x="228" y="0" width="170" height="58" rx="3" class="prefill" />
+        <text x="313" y="24" text-anchor="middle" class="label">A · Chunk 2</text>
+        <text x="313" y="45" text-anchor="middle" class="tiny">2048–4095</text>
+        <rect x="398" y="0" width="58" height="58" rx="3" class="decode" />
+        <text x="427" y="35" text-anchor="middle" class="label">D</text>
+        <rect x="456" y="0" width="170" height="58" rx="3" class="prefill" />
+        <text x="541" y="24" text-anchor="middle" class="label">A · Chunk 3</text>
+        <text x="541" y="45" text-anchor="middle" class="tiny">4096–6143</text>
+        <rect x="626" y="0" width="58" height="58" rx="3" class="decode" />
+        <text x="655" y="35" text-anchor="middle" class="label">D</text>
+        <rect x="684" y="0" width="170" height="58" rx="3" class="prefill" />
+        <text x="769" y="24" text-anchor="middle" class="label">A · Chunk 4</text>
+        <text x="769" y="45" text-anchor="middle" class="tiny">6144–8191</text>
+        <rect x="854" y="0" width="40" height="58" rx="3" class="decode" />
+        <text x="874" y="35" text-anchor="middle" class="label">D</text>
+    </g>
+    <text x="190" y="504" class="tiny">A = 长 Prompt 的 Prefill</text>
+    <text x="410" y="504" class="tiny">D = 其他请求的一次 Decode</text>
+    <path d="M190 516 H1095" class="axis" />
+    <text x="1102" y="521" class="tiny">时间</text>
 
-    <text x="82" y="505" class="label">请求 B/C</text>
-    <rect x="385" y="480" width="40" height="50" rx="4" class="decode" />
-    <rect x="605" y="480" width="40" height="50" rx="4" class="decode" />
-    <rect x="825" y="480" width="40" height="50" rx="4" class="decode" />
-    <rect x="1045" y="480" width="42" height="50" rx="4" class="decode" />
-    <text x="405" y="511" text-anchor="middle" class="inverse">D</text>
-    <text x="625" y="511" text-anchor="middle" class="inverse">D</text>
-    <text x="845" y="511" text-anchor="middle" class="inverse">D</text>
-    <text x="1066" y="511" text-anchor="middle" class="inverse">D</text>
-    <line x1="205" y1="552" x2="1100" y2="552" class="axis" />
-    <text x="1110" y="557" class="small">时间</text>
-
-    <line x1="385" y1="390" x2="385" y2="540" class="guide" />
-    <line x1="605" y1="390" x2="605" y2="540" class="guide" />
-    <line x1="825" y1="390" x2="825" y2="540" class="guide" />
-    <line x1="1045" y1="390" x2="1045" y2="540" class="guide" />
-
-    <rect x="55" y="585" width="1090" height="132" rx="8" class="panel" />
-    <text x="82" y="617" class="section">KV Cache 增量分配</text>
-    <text x="82" y="642" class="small">block_size = 16，每个 2048-token chunk 新增 128 blocks</text>
-
-    <g transform="translate(420 608)">
-        <rect x="0" y="28" width="140" height="42" rx="4" class="cache" />
-        <text x="70" y="54" text-anchor="middle" class="label">128 blocks</text>
-
-        <rect x="170" y="28" width="70" height="42" rx="4" class="cache" />
-        <rect x="240" y="28" width="70" height="42" rx="4" class="cache" opacity="0.84" />
-        <text x="240" y="54" text-anchor="middle" class="label">256</text>
-
-        <rect x="340" y="28" width="47" height="42" rx="4" class="cache" />
-        <rect x="387" y="28" width="47" height="42" rx="4" class="cache" opacity="0.84" />
-        <rect x="434" y="28" width="47" height="42" rx="4" class="cache" opacity="0.68" />
-        <text x="410" y="54" text-anchor="middle" class="label">384</text>
-
-        <rect x="510" y="28" width="35" height="42" rx="3" class="cache" />
-        <rect x="545" y="28" width="35" height="42" rx="3" class="cache" opacity="0.84" />
-        <rect x="580" y="28" width="35" height="42" rx="3" class="cache" opacity="0.68" />
-        <rect x="615" y="28" width="35" height="42" rx="3" class="cache" opacity="0.52" />
-        <text x="580" y="54" text-anchor="middle" class="label">512</text>
-
-        <path d="M145 49 H163 M315 49 H333 M485 49 H503" class="axis" />
+    <text x="76" y="565" class="label">KV Cache 增长</text>
+    <text x="190" y="548" class="small">每完成一个 2048-token chunk，再增加 128 blocks</text>
+    <g transform="translate(190 574)">
+        <g>
+            <text x="90" y="-10" text-anchor="middle" class="label">128 blocks</text>
+            <rect x="0" y="0" width="45" height="38" rx="2" class="cache" />
+            <rect x="45" y="0" width="45" height="38" rx="2" class="empty" />
+            <rect x="90" y="0" width="45" height="38" rx="2" class="empty" />
+            <rect x="135" y="0" width="45" height="38" rx="2" class="empty" />
+        </g>
+        <path d="M192 19 H222" class="axis" />
+        <g transform="translate(236 0)">
+            <text x="90" y="-10" text-anchor="middle" class="label">256 blocks</text>
+            <rect x="0" y="0" width="45" height="38" rx="2" class="cache" />
+            <rect x="45" y="0" width="45" height="38" rx="2" class="cache" />
+            <rect x="90" y="0" width="45" height="38" rx="2" class="empty" />
+            <rect x="135" y="0" width="45" height="38" rx="2" class="empty" />
+        </g>
+        <path d="M428 19 H458" class="axis" />
+        <g transform="translate(472 0)">
+            <text x="90" y="-10" text-anchor="middle" class="label">384 blocks</text>
+            <rect x="0" y="0" width="45" height="38" rx="2" class="cache" />
+            <rect x="45" y="0" width="45" height="38" rx="2" class="cache" />
+            <rect x="90" y="0" width="45" height="38" rx="2" class="cache" />
+            <rect x="135" y="0" width="45" height="38" rx="2" class="empty" />
+        </g>
+        <path d="M664 19 H694" class="axis" />
+        <g transform="translate(708 0)">
+            <text x="90" y="-10" text-anchor="middle" class="label">512 blocks</text>
+            <rect x="0" y="0" width="45" height="38" rx="2" class="cache" />
+            <rect x="45" y="0" width="45" height="38" rx="2" class="cache" />
+            <rect x="90" y="0" width="45" height="38" rx="2" class="cache" />
+            <rect x="135" y="0" width="45" height="38" rx="2" class="cache" />
+        </g>
     </g>
 
-    <rect x="64" y="665" width="320" height="32" rx="5" class="callout" />
-    <text x="224" y="686" text-anchor="middle" class="body">一次申请全部 → 每个 chunk 只追加当前所需 blocks</text>
-    <style id="editorial-diagram-style">
-        text { font-family: Helvetica Neue, Segoe UI, sans-serif; letter-spacing: 0; }
-        .title { fill: #111111 !important; font-weight: 800 !important; }
-        .subtitle, .small { fill: #333333 !important; }
-        .inverse { fill: #111111 !important; }
-        rect { rx: 3px; }
-        .panel { fill: #F4F4F4 !important; stroke: #111111 !important; stroke-width: 3 !important; }
-        .prefill, .chunk-a, .chunk-b { fill: #DDE0F1 !important; stroke: #111111 !important; stroke-width: 2.5 !important; }
-        .decode { fill: #DCEBDF !important; stroke: #111111 !important; stroke-width: 2.5 !important; }
-        .cache, .callout { fill: #F2E6D8 !important; stroke: #111111 !important; stroke-width: 2.5 !important; }
-        .axis, .guide { stroke: #111111 !important; }
-        marker path { fill: #111111 !important; }
-        [fill="#F5F5F7" i] { fill: #FFFFFF !important; }
-    </style>
+    <rect x="48" y="682" width="1104" height="70" rx="3" class="note" />
+    <text x="600" y="710" text-anchor="middle" class="label">核心变化</text>
+    <text x="600" y="734" text-anchor="middle" class="body">计算总量基本不变，但 Decode 不再长时间等待，KV blocks
+        也从一次性占满改为按 chunk 增量申请</text>
 </svg>

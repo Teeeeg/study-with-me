@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="650" viewBox="0 0 1200 650" role="img"
+    aria-labelledby="title desc">
+    <title id="title">Chunked Prefill 只在首次调度时查询 Prefix Cache</title>
+    <desc id="desc">请求 B 首次调度时查询缓存并命中当时已有的第一个 chunk。后续调度依靠 num_computed_tokens
+        继续，不再次查询，因此稍后才进入缓存的第二个 chunk 不会被 B 命中。</desc>
+    <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+            orient="auto">
+            <path d="M0 0 L10 5 L0 10 Z" fill="#111111" />
+        </marker>
+        <style>
+      text { font-family: Helvetica Neue, Segoe UI, sans-serif; letter-spacing: 0; }
+      .title { font-size: 32px; font-weight: 800; fill: #111111; }
+      .subtitle { font-size: 16px; fill: #333333; }
+      .heading { font-size: 20px; font-weight: 800; fill: #111111; }
+      .label { font-size: 15px; font-weight: 750; fill: #111111; }
+      .body { font-size: 14px; fill: #333333; }
+      .small { font-size: 13px; fill: #444444; }
+      .panel { fill: #F4F4F4; stroke: #111111; stroke-width: 3; }
+      .hit { fill: #DCEBDF; stroke: #111111; stroke-width: 2.5; }
+      .miss { fill: #F4D8D4; stroke: #111111; stroke-width: 2.5; }
+      .cache { fill: #E9D9EB; stroke: #111111; stroke-width: 2.5; }
+      .pending { fill: #FFFFFF; stroke: #888888; stroke-width: 2; stroke-dasharray: 7 5; }
+      .note { fill: #F2E6D8; stroke: #111111; stroke-width: 2.5; }
+      .arrow { fill: none; stroke: #111111; stroke-width: 3; marker-end: url(#arrow); }
+    </style>
+    </defs>
+
+    <rect width="1200" height="650" fill="#FFFFFF" />
+    <text x="600" y="46" text-anchor="middle" class="title">改变二：Prefix Cache 只在首次调度时查询</text>
+    <text x="600" y="76" text-anchor="middle" class="subtitle">能否命中，取决于请求第一次进入调度器时已经可用的完整前缀 blocks</text>
+
+    <rect x="48" y="108" width="1104" height="132" rx="3" class="panel" />
+    <text x="76" y="143" class="heading">共享 System Prompt · 4096 tokens</text>
+    <rect x="76" y="163" width="500" height="52" rx="3" class="cache" />
+    <text x="326" y="195" text-anchor="middle" class="label">Chunk 1 · token 0–2047</text>
+    <rect x="600" y="163" width="500" height="52" rx="3" class="pending" />
+    <text x="850" y="187" text-anchor="middle" class="label">Chunk 2 · token 2048–4095</text>
+    <text x="850" y="207" text-anchor="middle" class="small">此时尚未写入缓存</text>
+
+    <path d="M326 240 V278" class="arrow" />
+    <path d="M850 240 V278" class="arrow" />
+
+    <rect x="48" y="282" width="532" height="232" rx="3" class="panel" />
+    <text x="76" y="320" class="heading">① 请求 B 首次调度</text>
+    <text x="76" y="347" class="body">num_computed_tokens = 0 → 执行缓存查找</text>
+    <rect x="76" y="374" width="458" height="62" rx="3" class="hit" />
+    <text x="305" y="400" text-anchor="middle" class="label">Chunk 1：命中并复用</text>
+    <text x="305" y="424" text-anchor="middle" class="small">跳过前 2048 tokens 的 Prefill</text>
+    <rect x="76" y="454" width="458" height="36" rx="3" class="note" />
+    <text x="305" y="478" text-anchor="middle" class="label">查找窗口到此关闭</text>
+
+    <rect x="620" y="282" width="532" height="232" rx="3" class="panel" />
+    <text x="648" y="320" class="heading">② 请求 B 后续调度</text>
+    <text x="648" y="347" class="body">num_computed_tokens &gt; 0 → 沿已有 block table 继续</text>
+    <rect x="648" y="374" width="458" height="62" rx="3" class="cache" />
+    <text x="877" y="400" text-anchor="middle" class="label">A 的 Chunk 2 此时已进入缓存</text>
+    <text x="877" y="424" text-anchor="middle" class="small">但 B 不会再次执行 Prefix Cache 查找</text>
+    <rect x="648" y="454" width="458" height="36" rx="3" class="miss" />
+    <text x="877" y="478" text-anchor="middle" class="label">B 自己重新 Prefill Chunk 2</text>
+
+    <rect x="48" y="544" width="1104" height="78" rx="3" class="note" />
+    <text x="600" y="573" text-anchor="middle" class="label">关键不是“只能命中第一个 chunk”，而是“只查询一次”</text>
+    <text x="600" y="598" text-anchor="middle" class="body">首次查询时已经缓存的连续完整前缀都可复用；之后新出现的缓存不会被当前请求再次发现</text>
+</svg>

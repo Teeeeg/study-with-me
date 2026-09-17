@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620" role="img"
+    aria-labelledby="title desc">
+    <title id="title">Chunked Prefill 将 KV blocks 从一次性申请改为增量申请</title>
+    <desc id="desc">对于 32K token Prompt 和 16-token block，传统 Prefill 一次申请 2048 blocks；Chunked Prefill
+        每处理 2048 tokens 追加 128 blocks，num_computed_tokens 随进度前移，最终占用仍为 2048 blocks。</desc>
+    <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+            orient="auto">
+            <path d="M0 0 L10 5 L0 10 Z" fill="#111111" />
+        </marker>
+        <style>
+      text { font-family: Helvetica Neue, Segoe UI, sans-serif; letter-spacing: 0; }
+      .title { font-size: 32px; font-weight: 800; fill: #111111; }
+      .subtitle { font-size: 16px; fill: #333333; }
+      .heading { font-size: 21px; font-weight: 800; fill: #111111; }
+      .label { font-size: 15px; font-weight: 750; fill: #111111; }
+      .body { font-size: 14px; fill: #333333; }
+      .small { font-size: 13px; fill: #444444; }
+      .panel { fill: #F4F4F4; stroke: #111111; stroke-width: 3; }
+      .traditional { fill: #F4D8D4; stroke: #111111; stroke-width: 2.5; }
+      .allocated { fill: #E9D9EB; stroke: #111111; stroke-width: 2; }
+      .current { fill: #DCEBDF; stroke: #111111; stroke-width: 2.5; }
+      .future { fill: #FFFFFF; stroke: #999999; stroke-width: 1.5; stroke-dasharray: 6 4; }
+      .note { fill: #F2E6D8; stroke: #111111; stroke-width: 2.5; }
+      .arrow { fill: none; stroke: #111111; stroke-width: 3; marker-end: url(#arrow); }
+    </style>
+    </defs>
+
+    <rect width="1200" height="620" fill="#FFFFFF" />
+    <text x="600" y="46" text-anchor="middle" class="title">改变一：KV blocks 从一次性申请变为逐步追加</text>
+    <text x="600" y="76" text-anchor="middle" class="subtitle">32K Prompt · block size = 16 · chunk
+        size = 2048</text>
+
+    <rect x="48" y="108" width="1104" height="154" rx="3" class="panel" />
+    <text x="76" y="146" class="heading">传统 Prefill</text>
+    <text x="76" y="174" class="body">开始计算前，为全部 32,768 tokens 预留空间</text>
+    <path d="M310 185 H408" class="arrow" />
+    <rect x="432" y="151" width="668" height="68" rx="3" class="traditional" />
+    <text x="766" y="181" text-anchor="middle" class="heading">一次申请 2,048 blocks</text>
+    <text x="766" y="205" text-anchor="middle" class="small">单次容量检查与分配压力集中发生</text>
+
+    <rect x="48" y="288" width="1104" height="238" rx="3" class="panel" />
+    <text x="76" y="326" class="heading">Chunked Prefill</text>
+    <text x="76" y="354" class="body">每个调度步只为当前 2048-token chunk 追加 128 blocks</text>
+
+    <g transform="translate(76 390)">
+        <rect x="0" y="0" width="228" height="72" rx="3" class="current" />
+        <text x="114" y="27" text-anchor="middle" class="label">Step 1 · Chunk 1</text>
+        <text x="114" y="51" text-anchor="middle" class="body">+128 → 累计 128</text>
+        <path d="M240 36 H278" class="arrow" />
+
+        <rect x="292" y="0" width="228" height="72" rx="3" class="allocated" />
+        <text x="406" y="27" text-anchor="middle" class="label">Step 2 · Chunk 2</text>
+        <text x="406" y="51" text-anchor="middle" class="body">+128 → 累计 256</text>
+        <path d="M532 36 H570" class="arrow" />
+
+        <rect x="584" y="0" width="190" height="72" rx="3" class="future" />
+        <text x="679" y="29" text-anchor="middle" class="label">…</text>
+        <text x="679" y="52" text-anchor="middle" class="body">逐步追加</text>
+        <path d="M786 36 H824" class="arrow" />
+
+        <rect x="838" y="0" width="214" height="72" rx="3" class="allocated" />
+        <text x="945" y="27" text-anchor="middle" class="label">Step 16 · Chunk 16</text>
+        <text x="945" y="51" text-anchor="middle" class="body">+128 → 累计 2,048</text>
+    </g>
+
+    <text x="76" y="495" class="label">num_computed_tokens</text>
+    <path d="M258 490 H1088" class="arrow" />
+    <circle cx="258" cy="490" r="6" fill="#111111" />
+    <text x="258" y="516" text-anchor="middle" class="small">2,048</text>
+    <text x="1080" y="516" text-anchor="end" class="small">32,768 → 转入 Decode</text>
+
+    <rect x="48" y="552" width="1104" height="44" rx="3" class="note" />
+    <text x="600" y="580" text-anchor="middle" class="label">降低的是每一步的申请门槛与瞬时压力；请求完成 Prefill 后的最终 KV
+        占用不变</text>
+</svg>

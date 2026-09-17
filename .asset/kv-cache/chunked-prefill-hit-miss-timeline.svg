@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="650" viewBox="0 0 1200 650" role="img"
+    aria-labelledby="title desc">
+    <title id="title">首个 chunk 命中与后续 chunk 重算并存</title>
+    <desc id="desc">请求 A 和 B 共享 4096-token 前缀。B 首次调度时命中 A 已缓存的第一个 chunk；A 的第二个 chunk 稍后完成，但 B
+        不会再次查询缓存，因此仍需自行计算第二个 chunk。</desc>
+    <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+            orient="auto">
+            <path d="M0 0 L10 5 L0 10 Z" fill="#111111" />
+        </marker>
+        <style>
+      text { font-family: Helvetica Neue, Segoe UI, sans-serif; letter-spacing: 0; }
+      .title { font-size: 32px; font-weight: 800; fill: #111111; }
+      .subtitle { font-size: 16px; fill: #333333; }
+      .heading { font-size: 20px; font-weight: 800; fill: #111111; }
+      .label { font-size: 15px; font-weight: 750; fill: #111111; }
+      .body { font-size: 14px; fill: #333333; }
+      .small { font-size: 13px; fill: #444444; }
+      .panel { fill: #F4F4F4; stroke: #111111; stroke-width: 3; }
+      .compute { fill: #DDE0F1; stroke: #111111; stroke-width: 2.5; }
+      .hit { fill: #DCEBDF; stroke: #111111; stroke-width: 2.5; }
+      .recompute { fill: #F4D8D4; stroke: #111111; stroke-width: 2.5; }
+      .cache { fill: #E9D9EB; stroke: #111111; stroke-width: 2.5; }
+      .note { fill: #F2E6D8; stroke: #111111; stroke-width: 2.5; }
+      .axis { fill: none; stroke: #111111; stroke-width: 3; marker-end: url(#arrow); }
+      .event { stroke: #777777; stroke-width: 1.5; stroke-dasharray: 6 5; }
+    </style>
+    </defs>
+
+    <rect width="1200" height="650" fill="#FFFFFF" />
+    <text x="600" y="46" text-anchor="middle" class="title">派生问题一：首段命中，后段仍可能重算</text>
+    <text x="600" y="76" text-anchor="middle" class="subtitle">A、B 共享 4096-token System Prompt ·
+        chunk size = 2048</text>
+
+    <rect x="48" y="108" width="1104" height="372" rx="3" class="panel" />
+    <text x="76" y="146" class="heading">调度时间线</text>
+    <path d="M210 442 H1090" class="axis" />
+    <text x="1098" y="447" class="small">时间</text>
+
+    <text x="76" y="213" class="label">请求 A</text>
+    <rect x="210" y="178" width="230" height="66" rx="3" class="compute" />
+    <text x="325" y="204" text-anchor="middle" class="label">计算 Chunk 1</text>
+    <text x="325" y="228" text-anchor="middle" class="small">完成后写入 Prefix Cache</text>
+    <rect x="650" y="178" width="230" height="66" rx="3" class="compute" />
+    <text x="765" y="204" text-anchor="middle" class="label">计算 Chunk 2</text>
+    <text x="765" y="228" text-anchor="middle" class="small">稍后才写入缓存</text>
+
+    <text x="76" y="329" class="label">请求 B</text>
+    <rect x="456" y="294" width="178" height="66" rx="3" class="hit" />
+    <text x="545" y="320" text-anchor="middle" class="label">Chunk 1 命中</text>
+    <text x="545" y="344" text-anchor="middle" class="small">首次查询并复用</text>
+    <rect x="896" y="294" width="178" height="66" rx="3" class="recompute" />
+    <text x="985" y="320" text-anchor="middle" class="label">Chunk 2 重算</text>
+    <text x="985" y="344" text-anchor="middle" class="small">不再查询缓存</text>
+
+    <line x1="440" y1="164" x2="440" y2="442" class="event" />
+    <text x="440" y="158" text-anchor="middle" class="small">A 的 Chunk 1 可复用</text>
+    <line x1="650" y1="164" x2="650" y2="442" class="event" />
+    <text x="650" y="275" text-anchor="middle" class="small">B 的查找窗口关闭</text>
+    <line x1="880" y1="164" x2="880" y2="442" class="event" />
+    <text x="880" y="158" text-anchor="middle" class="small">A 的 Chunk 2 可复用</text>
+
+    <rect x="76" y="386" width="998" height="38" rx="3" class="cache" />
+    <text x="575" y="411" text-anchor="middle" class="label">Prefix Cache 随 A 的计算继续增长，但 B 不会重新扫描</text>
+
+    <rect x="48" y="510" width="1104" height="108" rx="3" class="note" />
+    <text x="600" y="542" text-anchor="middle" class="label">为什么会同时出现 hit 与 miss？</text>
+    <text x="600" y="570" text-anchor="middle" class="body">B
+        只能复用首次查询时已经存在的连续完整前缀；之后才写入缓存的相同内容不会自动接入 B 的 block table</text>
+    <text x="600" y="594" text-anchor="middle" class="small">因此共享前缀跨越多个 chunk 时，缓存可用时机也会影响实际命中长度</text>
+</svg>

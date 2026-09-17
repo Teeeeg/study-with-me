@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="610" viewBox="0 0 1200 610" role="img"
+    aria-labelledby="title desc">
+    <title id="title">Chunked Prefill 按完整 KV block 对齐调度 token</title>
+    <desc id="desc">当 block size 为 16、token budget 为 133 时，调度器安排 8 个完整 block，也就是 128 tokens；剩余 5 个
+        token 的预算不足以形成完整 block，留到下一调度步。</desc>
+    <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+            orient="auto">
+            <path d="M0 0 L10 5 L0 10 Z" fill="#111111" />
+        </marker>
+        <style>
+      text { font-family: Helvetica Neue, Segoe UI, sans-serif; letter-spacing: 0; }
+      .title { font-size: 32px; font-weight: 800; fill: #111111; }
+      .subtitle { font-size: 16px; fill: #333333; }
+      .heading { font-size: 21px; font-weight: 800; fill: #111111; }
+      .label { font-size: 15px; font-weight: 750; fill: #111111; }
+      .body { font-size: 14px; fill: #333333; }
+      .small { font-size: 13px; fill: #444444; }
+      .panel { fill: #F4F4F4; stroke: #111111; stroke-width: 3; }
+      .full { fill: #DCEBDF; stroke: #111111; stroke-width: 2.5; }
+      .partial { fill: #F4D8D4; stroke: #111111; stroke-width: 2.5; stroke-dasharray: 7 5; }
+      .cache { fill: #E9D9EB; stroke: #111111; stroke-width: 2.5; }
+      .note { fill: #F2E6D8; stroke: #111111; stroke-width: 2.5; }
+      .arrow { fill: none; stroke: #111111; stroke-width: 3; marker-end: url(#arrow); }
+    </style>
+    </defs>
+
+    <rect width="1200" height="610" fill="#FFFFFF" />
+    <text x="600" y="46" text-anchor="middle" class="title">改变三：调度边界与完整 KV block 对齐</text>
+    <text x="600" y="76" text-anchor="middle" class="subtitle">Prefix Caching 以完整 block 建立哈希；半满
+        block 不能成为稳定的缓存条目</text>
+
+    <rect x="48" y="108" width="1104" height="104" rx="3" class="panel" />
+    <text x="76" y="145" class="heading">本轮 token budget = 133</text>
+    <text x="76" y="178" class="label">block size = 16 tokens</text>
+    <path d="M360 160 H520" class="arrow" />
+    <rect x="548" y="132" width="552" height="56" rx="3" class="note" />
+    <text x="824" y="166" text-anchor="middle" class="label">floor(133 ÷ 16) × 16 = 128 tokens</text>
+
+    <rect x="48" y="242" width="1104" height="228" rx="3" class="panel" />
+    <text x="76" y="280" class="heading">调度结果</text>
+    <text x="76" y="309" class="body">8 个完整 blocks 本轮执行；不足一个 block 的 5-token 预算留待后续</text>
+
+    <g transform="translate(76 338)">
+        <rect x="0" y="0" width="116" height="72" rx="3" class="full" />
+        <text x="58" y="31" text-anchor="middle" class="label">Block 1</text>
+        <text x="58" y="54" text-anchor="middle" class="small">16 tokens</text>
+        <rect x="116" y="0" width="116" height="72" rx="3" class="full" />
+        <text x="174" y="31" text-anchor="middle" class="label">Block 2</text>
+        <text x="174" y="54" text-anchor="middle" class="small">16 tokens</text>
+        <rect x="232" y="0" width="116" height="72" rx="3" class="full" />
+        <text x="290" y="42" text-anchor="middle" class="label">…</text>
+        <rect x="348" y="0" width="116" height="72" rx="3" class="full" />
+        <text x="406" y="31" text-anchor="middle" class="label">Block 7</text>
+        <text x="406" y="54" text-anchor="middle" class="small">16 tokens</text>
+        <rect x="464" y="0" width="116" height="72" rx="3" class="full" />
+        <text x="522" y="31" text-anchor="middle" class="label">Block 8</text>
+        <text x="522" y="54" text-anchor="middle" class="small">16 tokens</text>
+        <rect x="612" y="0" width="160" height="72" rx="3" class="partial" />
+        <text x="692" y="31" text-anchor="middle" class="label">剩余预算</text>
+        <text x="692" y="54" text-anchor="middle" class="small">5 tokens</text>
+        <path d="M784 36 H832" class="arrow" />
+        <rect x="846" y="0" width="202" height="72" rx="3" class="cache" />
+        <text x="947" y="31" text-anchor="middle" class="label">下一调度步</text>
+        <text x="947" y="54" text-anchor="middle" class="small">与新预算一起处理</text>
+    </g>
+
+    <text x="366" y="442" text-anchor="middle" class="label">本轮调度 8 × 16 = 128 tokens</text>
+    <text x="768" y="442" text-anchor="middle" class="label">本轮未使用 5-token 预算</text>
+
+    <rect x="48" y="498" width="1104" height="82" rx="3" class="note" />
+    <text x="600" y="528" text-anchor="middle" class="label">为什么要对齐？</text>
+    <text x="600" y="554" text-anchor="middle" class="body">完整 block 的 token 内容固定后才能计算哈希并参与 Prefix
+        Cache 匹配</text>
+</svg>
