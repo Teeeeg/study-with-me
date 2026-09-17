@@ -1,5 +1,5 @@
 en:
-  title: Study With Me
+  title: Knowledge Base
   tagline: Learning notes on AI, systems, and everything in between.
   contents: Contents
   knowledge: Knowledge
@@ -10,7 +10,7 @@ en:
   skip: Skip to content
 
 zh:
-  title: 一起学
+  title: 知识库
   tagline: 关于 AI、系统，以及路上遇到的一切的学习笔记。
   contents: 目录
   knowledge: 知识
