@@ -2,7 +2,7 @@
     aria-labelledby="title desc">
     <title id="title">RadixAttention 与 vLLM APC 的前缀索引对比</title>
     <desc id="desc">左侧 RadixAttention 用 Radix Tree 保存连续 token 片段，分歧点可以落在节点内部；右侧 vLLM
-        APC 为每个填满的 block 计算链式哈希并查哈希表，未填满的 block 不参与匹配。两者命中的物理 KV block 都通过引用计数共享。</desc>
+        APC 按完整 block 的链式哈希查表。左侧演示 token 粒度，实际复用仍受页对齐和后端约束；两者都需要保护正在使用的缓存。</desc>
     <defs>
         <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
             orient="auto">
@@ -57,9 +57,9 @@
 
     <rect x="84" y="424" width="464" height="126" rx="3" class="note" />
     <text x="106" y="452" class="label">分歧点可以落在节点内部</text>
-    <text x="106" y="480" class="body">若新请求只与前两个 token 相同，节点会分裂为</text>
-    <text x="106" y="504" class="body">[“You”, “ are”] 与 [“ helpful”]，前两个 token 仍可</text>
-    <text x="106" y="528" class="body">复用，不受 block 边界约束。</text>
+    <text x="106" y="480" class="body">token 粒度下，可拆出 [“You”, “ are”] 共享路径。</text>
+    <text x="106" y="504" class="body">树能表达细粒度分歧；实际可复用多少 KV，</text>
+    <text x="106" y="528" class="body">仍取决于 page size 与后端的对齐要求。</text>
 
     <rect x="620" y="108" width="528" height="470" rx="3" class="panel" />
     <text x="884" y="146" text-anchor="middle" class="heading">vLLM APC · block 级哈希</text>
@@ -87,7 +87,7 @@
     <path d="M933 270 H975" class="arrow" />
 
     <text x="884" y="312" text-anchor="middle" class="small">Hi = hash(Hi-1, tokens_i,
-        extra)：前文一旦分歧，后续哈希必然不同</text>
+        extra)：把前文与当前块一起编码</text>
 
     <rect x="652" y="330" width="452" height="128" rx="3" class="note" />
     <text x="674" y="358" class="label">Hash Table（block 级）</text>
@@ -100,6 +100,5 @@
     <text x="674" y="528" class="body">尾块要等填满后，才可能被后续请求复用。</text>
 
     <rect x="52" y="604" width="1096" height="40" rx="3" fill="#111111" />
-    <text x="600" y="630" text-anchor="middle" class="inverse">共同点：命中的物理 KV block
-        都不复制，由引用计数共享；差别只在“用什么结构找到它们”</text>
+    <text x="600" y="630" text-anchor="middle" class="inverse">这里比较前缀索引；物理布局、页大小与调度也会影响实际复用效果</text>
 </svg>
