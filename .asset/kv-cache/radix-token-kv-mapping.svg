@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="650" viewBox="0 0 1200 650" role="img"
+    aria-labelledby="title desc">
+    <title id="title">RadixAttention 从 token 序列到 KV Cache 的映射</title>
+    <desc id="desc">请求 A 和请求 B 共享 You are helpful 这一 System Prompt。Radix Tree 节点保存可读的连续 token 片段及等长的
+        KV Cache
+        位置索引，公共前缀只映射一份 KV，Explain KV 与 Define GQA 两个后缀分别映射到缓存池中的其他位置。</desc>
+    <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+            orient="auto">
+            <path d="M0 0 L10 5 L0 10 Z" fill="#111111" />
+        </marker>
+        <style>
+      text { font-family: Helvetica Neue, Segoe UI, sans-serif; letter-spacing: 0; }
+      .title { font-size: 30px; font-weight: 800; fill: #111111; }
+      .subtitle { font-size: 16px; fill: #333333; }
+      .heading { font-size: 19px; font-weight: 800; fill: #111111; }
+      .label { font-size: 15px; font-weight: 750; fill: #111111; }
+      .body { font-size: 14px; fill: #333333; }
+      .small { font-size: 13px; fill: #444444; }
+      .panel { fill: #F4F4F4; stroke: #111111; stroke-width: 3; }
+      .shared { fill: #DDE0F1; stroke: #111111; stroke-width: 2.5; }
+      .branch-a { fill: #F2E6D8; stroke: #111111; stroke-width: 2.5; }
+      .branch-b { fill: #DCEBDF; stroke: #111111; stroke-width: 2.5; }
+      .pool { fill: #FFFFFF; stroke: #777777; stroke-width: 2; }
+      .edge { fill: none; stroke: #111111; stroke-width: 3; }
+      .arrow { fill: none; stroke: #111111; stroke-width: 3; marker-end: url(#arrow); }
+      .dashed { fill: none; stroke: #555555; stroke-width: 2.5; stroke-dasharray: 7 5; marker-end: url(#arrow); }
+    </style>
+    </defs>
+
+    <rect width="1200" height="650" fill="#FFFFFF" />
+    <text x="600" y="46" text-anchor="middle" class="title">Token 序列如何定位 KV Cache</text>
+    <text x="600" y="76" text-anchor="middle" class="subtitle">Radix Tree 保存 token 片段与 KV 位置索引；真正的
+        K/V 张量位于 GPU Cache Pool</text>
+
+    <rect x="42" y="108" width="300" height="446" rx="3" class="panel" />
+    <text x="192" y="146" text-anchor="middle" class="heading">1. 请求 token 序列</text>
+    <text x="70" y="190" class="label">请求 A</text>
+    <rect x="70" y="208" width="166" height="66" rx="3" class="shared" />
+    <text x="153" y="230" text-anchor="middle" class="small">System Prompt</text>
+    <text x="153" y="251" text-anchor="middle" class="label">[“You”, “ are”,</text>
+    <text x="153" y="269" text-anchor="middle" class="label">“ helpful”]</text>
+    <rect x="236" y="208" width="78" height="66" rx="3" class="branch-a" />
+    <text x="275" y="230" text-anchor="middle" class="small">Query A</text>
+    <text x="275" y="251" text-anchor="middle" class="small">“Explain”</text>
+    <text x="275" y="269" text-anchor="middle" class="small">“ KV”</text>
+
+    <text x="70" y="316" class="label">请求 B</text>
+    <rect x="70" y="334" width="166" height="66" rx="3" class="shared" />
+    <text x="153" y="356" text-anchor="middle" class="small">System Prompt</text>
+    <text x="153" y="377" text-anchor="middle" class="label">[“You”, “ are”,</text>
+    <text x="153" y="395" text-anchor="middle" class="label">“ helpful”]</text>
+    <rect x="236" y="334" width="78" height="66" rx="3" class="branch-b" />
+    <text x="275" y="356" text-anchor="middle" class="small">Query B</text>
+    <text x="275" y="377" text-anchor="middle" class="small">“Define”</text>
+    <text x="275" y="395" text-anchor="middle" class="small">“ GQA”</text>
+
+    <rect x="70" y="438" width="244" height="72" rx="3" fill="#FFFFFF" stroke="#777777"
+        stroke-width="2" />
+    <text x="192" y="466" text-anchor="middle" class="label">相同 token 前缀</text>
+    <text x="192" y="490" text-anchor="middle" class="body">只进入同一条共享路径</text>
+
+    <path d="M358 330 H402" class="arrow" />
+
+    <rect x="418" y="108" width="414" height="446" rx="3" class="panel" />
+    <text x="625" y="146" text-anchor="middle" class="heading">2. Radix Tree 节点</text>
+    <rect x="575" y="170" width="100" height="40" rx="3" class="shared" />
+    <text x="625" y="196" text-anchor="middle" class="label">root</text>
+    <path d="M625 210 V244" class="edge" />
+
+    <rect x="472" y="236" width="306" height="100" rx="3" class="shared" />
+    <text x="492" y="270" class="small">key · token</text>
+    <text x="758" y="267" text-anchor="end" class="label">[“You”, “ are”,</text>
+    <text x="758" y="287" text-anchor="end" class="label">“ helpful”]</text>
+    <text x="492" y="302" class="small">value · KV index</text>
+    <text x="758" y="314" text-anchor="end" class="label">[12, 13, 14]</text>
+
+    <path d="M625 336 V356 M625 356 L527 386 M625 356 L723 386" class="edge" />
+    <rect x="452" y="386" width="150" height="92" rx="3" class="branch-a" />
+    <text x="527" y="412" text-anchor="middle" class="small">Query A 节点</text>
+    <text x="527" y="438" text-anchor="middle" class="label">[“Explain”, “ KV”]</text>
+    <text x="527" y="462" text-anchor="middle" class="body">→ [28, 29]</text>
+    <rect x="648" y="386" width="150" height="92" rx="3" class="branch-b" />
+    <text x="723" y="412" text-anchor="middle" class="small">Query B 节点</text>
+    <text x="723" y="438" text-anchor="middle" class="label">[“Define”, “ GQA”]</text>
+    <text x="723" y="462" text-anchor="middle" class="body">→ [43, 44]</text>
+    <text x="625" y="520" text-anchor="middle" class="body">key 与 value 等长：每个 token 对应一个 KV 位置</text>
+
+    <path d="M848 330 H892" class="arrow" />
+
+    <rect x="908" y="108" width="250" height="446" rx="3" class="panel" />
+    <text x="1033" y="146" text-anchor="middle" class="heading">3. GPU KV Cache Pool</text>
+    <g transform="translate(942 184)">
+        <rect x="0" y="0" width="182" height="42" rx="3" class="shared" />
+        <text x="91" y="27" text-anchor="middle" class="label">#12–14 · Shared KV</text>
+        <rect x="0" y="62" width="182" height="42" rx="3" class="pool" />
+        <text x="91" y="89" text-anchor="middle" class="small">#16–27 · 其他请求</text>
+        <rect x="0" y="124" width="182" height="42" rx="3" class="branch-a" />
+        <text x="91" y="151" text-anchor="middle" class="label">#28–29 · Query A KV</text>
+        <rect x="0" y="186" width="182" height="42" rx="3" class="pool" />
+        <text x="91" y="213" text-anchor="middle" class="small">#30–42 · 其他请求</text>
+        <rect x="0" y="248" width="182" height="42" rx="3" class="branch-b" />
+        <text x="91" y="275" text-anchor="middle" class="label">#43–44 · Query B KV</text>
+    </g>
+    <text x="1033" y="508" text-anchor="middle" class="body">索引允许物理位置不连续</text>
+    <text x="1033" y="530" text-anchor="middle" class="body">无需把 K/V 存进树节点</text>
+
+    <rect x="208" y="580" width="784" height="42" rx="3" class="shared" />
+    <text x="600" y="606" text-anchor="middle" class="label">共享发生在树路径：两个请求复用 “You are helpful” 的
+        #12–14，仅为各自查询新增 KV</text>
+</svg>

@@ -609,198 +609,45 @@ System Prompt、多轮对话、Few-shot 示例和 RAG 文档经常形成共享�
 
 ### 2. RadixAttention 核心原理
 
-RadixAttention 的核心创新在于使用 **Radix Tree（基数树）** 这一数据结构来组织和管理 token 序列与 KV Cache 的映射关系。本章将深入介绍 Radix Tree 的原理及其在 KV Cache 管理中的应用。
+RadixAttention 把 token 序列组织成 Radix Tree，并让树中的路径指向对应的 KV Cache。新请求沿树寻找最长公共前缀，只计算尚未缓存的后缀；显存不足时，再从不影响活跃请求的叶子开始回收。
 
 #### 2.1 Radix Tree 数据结构
 
-本节将详细介绍 Radix Tree 数据结构的基本原理、核心特性以及时间复杂度分析。
+Trie 的每条边只保存一个元素，长而无分支的路径会产生许多中间节点。**Radix Tree（基数树）**将这类路径压缩为一个节点，使一条边可以保存连续片段。
 
-##### 2.1.1 从 Trie 到 Radix Tree
+![Trie 与 Radix Tree 的路径压缩和前缀共享对比](../../.asset/kv-cache/trie-vs-radix-tree.svg)
 
-**Trie（前缀树）** 是一种经典的树形数据结构，用于高效存储和检索字符串集合。在 Trie 中，每个节点代表一个字符，从根到叶子的路径表示一个完整的字符串。
+在 RadixAttention 中，图里的字符串片段换成连续的 token 序列：
 
-```text
-Trie 存储 ["hello", "help", "world"]：
+- **路径压缩**：减少树节点与遍历层级；
+- **前缀共享**：公共 token 路径及其 KV Cache 只保存一份；
+- **最长前缀匹配**：新请求沿树匹配到分歧点，直接复用此前的缓存。
 
-        root
-       /    \
-      h      w
-      |      |
-      e      o
-      |      |
-      l      r
-     / \     |
-    l   p    l
-    |        |
-    o        d
-```
-
-Trie 的问题在于：当存在长的非分支路径时，会产生大量只有单个子节点的中间节点，浪费内存且增加遍历深度。
-
-**Radix Tree（基数树）**，也称为 **压缩前缀树（Compressed Trie）** 或 **Patricia Tree**，通过**路径压缩**解决了这一问题。它将连续的、没有分支的节点合并为一个节点，存储整个字符串片段而非单个字符。
-
-```text
-Radix Tree 存储 ["hello", "help", "world"]：
-
-        root
-       /    \
-    "hel"  "world"
-     / \
-   "lo" "p"
-
-节点数：5（Trie 需要 11 个节点）
-```
-
-##### 2.1.2 Radix Tree 的核心特性
-
-与传统 Trie 树相比，Radix Tree 具有以下几个核心特性，使其非常适合用于管理 KV Cache：
-
-| 特性             | 说明                                   |
-| ---------------- | -------------------------------------- |
-| **路径压缩**     | 连续非分支节点合并，减少内存和遍历深度 |
-| **前缀共享**     | 相同前缀自动合并到同一路径             |
-| **动态更新**     | 支持高效的插入、删除和查找             |
-| **最长前缀匹配** | 天然支持找到与查询序列匹配的最长前缀   |
-
-##### 2.1.3 时间复杂度分析
-
-设 $m$ 为查询/插入序列的长度， $k$ 为字符集大小（对于 token 序列， $k$ 为词表大小）：
-
-| 操作         | 时间复杂度 | 说明                                   |
-| ------------ | ---------- | -------------------------------------- |
-| 查找         | $O(m)$[^1] | 与序列长度线性相关，与树中总节点数无关 |
-| 插入         | $O(m)$     | 最坏情况需要分裂现有节点               |
-| 删除         | $O(m)$     | 可能触发节点合并                       |
-| 最长前缀匹配 | $O(m)$     | 遍历直到无法继续匹配                   |
-
-[^1]: 注：在标准的 Radix Tree 中，如果考虑节点内部的字符串比较，最坏情况时间复杂度应为 $O(\min(m, k \cdot \log n))$。但在 LLM 推理场景中，由于 Token ID 是定长整数且比较极快，且分支因子（词表大小）很大但深度较浅，将其描述为与序列长度 $m$ 呈线性关系是工程上准确的简化。
+若请求长度为 $m$，查找、插入和最长前缀匹配都只需沿请求 token 前进，工程上可视为 $O(m)$；树中缓存的请求总数不会直接增加遍历长度。
 
 #### 2.2 Token 序列到 KV Cache 的映射
 
-在 RadixAttention 中，Radix Tree 的每个节点不仅存储 token 序列片段，还关联了对应的 **KV Cache Block**。
+Radix Tree 节点不直接保存庞大的 K/V 张量，而是保存两组等长数据：一段连续的 **token IDs**，以及每个 token 对应的 **KV Cache 位置索引**。
 
-##### 2.2.1 节点结构设计
+![RadixAttention 从请求 token 序列到 Radix Tree 节点，再到 GPU KV Cache Pool 的映射](../../.asset/kv-cache/radix-token-kv-mapping.svg)
 
-在 RadixAttention 的实现中，每个 Radix Tree 节点都需要保存 token 信息、关联的缓存块索引、子节点映射、引用计数和最后访问时间。
-
-##### 2.2.2 树的构建过程
-
-当新的 token 序列需要被缓存时，RadixAttention 执行以下步骤：
-
-1. **从根节点开始匹配**：逐 token 比较，沿着匹配的路径向下遍历
-2. **处理分歧点**：
-   - 如果在某个节点内部出现不匹配，**分裂该节点**
-   - 将公共部分保留，不同部分创建新的子节点
-3. **创建新路径**：对于完全不匹配的后缀，创建新的节点链
-
-```text
-初始状态：树中已有序列 "hello world"
-
-        root
-          |
-    "hello world"
-
-插入序列 "hello vllm"：
-
-步骤 1: 匹配 "hello " (6 tokens) ✓
-步骤 2: 在 "world" 节点处发现不匹配（w vs v）
-步骤 3: 分裂节点，创建分支
-
-分裂后结果：父节点保留公共前缀，创建两个新子节点
-        root
-          |
-      "hello "
-        /    \
-   "world"  "vllm"
-```
-
-![Radix Tree 在最长公共前缀处进行节点分裂](../../.asset/kv-cache/radix-tree-split.svg)
-
-##### 2.2.3 前缀共享机制
-
-Radix Tree 的结构天然支持前缀共享：**所有具有相同前缀的序列都会经过相同的节点路径**。这意味着：
-
-- 相同前缀的 KV Cache 只存储一份。
-- 新序列插入时自动识别并复用已有前缀。
-- 无需显式的“注册”或“声明”共享关系。
-
-```text
-请求 A: [System Prompt] + [Query A] → 缓存 System Prompt
-请求 B: [System Prompt] + [Query B] → 自动复用 System Prompt 的 KV Cache
-请求 C: [System Prompt] + [Query A] + [Response A] + [Query C]
-        → 复用 "System Prompt + Query A" 的全部 KV Cache
-```
+图中两个请求都以 `You are helpful` 开头，因此共享同一树节点及其 KV 位置 `#12–14`；`Explain KV` 与 `Define GQA` 只为各自的查询 token 新增位置。树负责组织和复用逻辑前缀，索引负责定位 GPU Cache Pool 中可不连续的实际 K/V。
 
 #### 2.3 前缀匹配与查找算法
 
-前缀匹配是 RadixAttention 的核心操作，决定了能够复用多少已缓存的 KV Cache。本节介绍最长前缀匹配算法及其查找结果的处理方式。
-
-##### 2.3.1 最长前缀匹配算法
-
-当新请求到达时，RadixAttention 需要找到与请求 token 序列匹配的**最长前缀**，以最大化 KV Cache 复用。查找从根节点开始，根据下一个 token 选择子节点，再逐 token 比较节点内的压缩路径；节点完全匹配时继续向下，遇到节点内部不匹配或缺少对应子节点时停止。
+新请求从根节点开始，按 token 逐段比较压缩路径：节点完全匹配就继续向下，节点内部出现差异或没有对应子节点时停止。走过的最长路径就是可复用的 KV Cache。
 
 ![RadixAttention 最长前缀匹配与 KV Cache 复用](../../.asset/kv-cache/radix-prefix-match.svg)
 
-##### 2.3.2 查找结果的处理
-
-前缀匹配的结果决定了推理引擎的后续行为：
-
-| 匹配情况 | 处理方式                                            |
-| -------- | --------------------------------------------------- |
-| 完全匹配 | 直接复用全部 KV Cache，跳过 Prefill                 |
-| 部分匹配 | 复用匹配部分的 KV Cache，仅对未匹配后缀执行 Prefill |
-| 无匹配   | 从头执行完整 Prefill，并将结果缓存                  |
-
-```text
-查询序列: [T0, T1, T2, T3, T4, T5, T6, T7]
-树中已有: [T0, T1, T2, T3] → KV Blocks [B0, B1]
-
-匹配结果: 长度=4, Blocks=[B0, B1]
-
-Prefill 执行:
-- 位置 0-3: 跳过计算，加载 [B0, B1]
-- 位置 4-7: 执行 Prefill，生成新的 KV Cache
-```
+图中新请求命中 `System Prompt → Query A → Response A`，因此直接取得这段路径关联的 KV Cache，只对 `Query C` 执行 Prefill。若根节点后立即失配，则完整 Prefill；若全部可用前缀均命中，则只处理推理引擎为产出下一 token 所保留的计算边界。
 
 #### 2.4 LRU 淘汰策略
 
-GPU 显存有限，无法无限缓存 KV Cache。RadixAttention 采用 **LRU（Least Recently Used）** 策略进行缓存淘汰。
-
-##### 2.4.1 引用计数机制
-
-为了避免淘汰正在被使用的 KV Cache，每个节点维护一个**引用计数**：
-
-- 当请求开始使用某节点的 KV Cache 时，`ref_count += 1`
-- 当请求完成（生成结束或被取消）时，`ref_count -= 1`
-- **只有 `ref_count == 0` 的节点才能被淘汰**
-
-##### 2.4.2 淘汰算法
-
-当显存不足时，RadixAttention 从**叶子节点**开始，按最后访问时间排序，淘汰最久未使用的节点，直到释放足够的 KV Cache Blocks。
-
-##### 2.4.3 淘汰的级联效应
-
-由于 Radix Tree 的前缀共享特性，淘汰需要谨慎处理：
-
-- **只能从叶子节点开始淘汰**：中间节点被淘汰会导致所有后代节点失效。
-- **淘汰后可能触发节点合并**：父节点只剩一个子节点时，可以合并以保持压缩特性。
-
-```text
-淘汰前：
-    "hello "
-     /    \
-  "world" "vllm"
-
-淘汰 "vllm" 后：
-    "hello "
-       |
-    "world"
-
-进一步压缩：
-  "hello world"
-```
+GPU 显存不足时，RadixAttention 按最近访问时间回收缓存，但只考虑**未被请求引用的叶子节点**。引用计数大于 0 表示仍有活跃请求使用该路径；中间节点则可能被多个后缀共享，直接删除会让整棵子树失效。
 
 ![RadixAttention 从叶子执行 LRU 淘汰并重新压缩路径](../../.asset/kv-cache/radix-lru-eviction.svg)
+
+图中 `vllm` 是最久未访问且引用计数为 0 的叶子，因此先释放它关联的 KV blocks。删除后若父节点只剩一个孩子，可重新合并连续路径，以保持 Radix Tree 的压缩结构。
 
 ---
 
