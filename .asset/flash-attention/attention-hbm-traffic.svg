@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img"
+    aria-labelledby="title desc">
+    <title id="title">Attention 的中间结果是否需要写入 HBM</title>
+    <desc id="desc">上方展示朴素 Attention 将分数 S 和权重 P 各写入并读出 HBM。下方展示 FlashAttention 把 Q/K/V
+        分块加载到片上，局部完成分数、在线归一化和输出累积，不物化完整的 S 和 P。</desc>
+    <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+            orient="auto">
+            <path d="M0 0 L10 5 L0 10 Z" fill="#111111" />
+        </marker>
+        <style>
+            text { font-family: Helvetica Neue, Segoe UI, sans-serif; letter-spacing: 0; }
+            .title { font-size: 30px; font-weight: 800; fill: #111111; }
+            .subtitle { font-size: 17px; fill: #333333; }
+            .heading { font-size: 21px; font-weight: 800; fill: #111111; }
+            .label { font-size: 18px; font-weight: 700; fill: #111111; }
+            .body { font-size: 16px; fill: #333333; }
+            .panel { fill: #F4F4F4; stroke: #111111; stroke-width: 3; }
+            .compute { fill: #DCEBDF; stroke: #111111; stroke-width: 2.5; }
+            .io { fill: #F2D9D8; stroke: #111111; stroke-width: 2.5; }
+            .input { fill: #DDE0F1; stroke: #111111; stroke-width: 2.5; }
+            .output { fill: #F2E6D8; stroke: #111111; stroke-width: 2.5; }
+            .arrow { fill: none; stroke: #111111; stroke-width: 3; marker-end: url(#arrow); }
+        </style>
+    </defs>
+    <rect width="1200" height="720" fill="#FFFFFF" />
+    <text x="600" y="46" text-anchor="middle" class="title">最终只需要 O，却反复搬运整张 S 和 P</text>
+    <text x="600" y="77" text-anchor="middle" class="subtitle">省掉的是中间矩阵的显存往返，不是 query 与 key 的比较</text>
+
+    <rect x="42" y="112" width="1116" height="240" rx="3" class="panel" />
+    <text x="68" y="149" class="heading">朴素实现：三个操作之间，完整矩阵落入 HBM</text>
+    <rect x="68" y="187" width="170" height="70" rx="3" class="compute" />
+    <text x="153" y="216" text-anchor="middle" class="label">Q × Kᵀ</text>
+    <text x="153" y="242" text-anchor="middle" class="body">计算分数 S</text>
+    <path d="M246 222 H272" class="arrow" />
+    <rect x="282" y="177" width="170" height="92" rx="3" class="io" />
+    <text x="367" y="206" text-anchor="middle" class="label">HBM：S</text>
+    <text x="367" y="232" text-anchor="middle" class="body">写入 → 再读出</text>
+    <text x="367" y="256" text-anchor="middle" class="body">N × N</text>
+    <path d="M460 222 H486" class="arrow" />
+    <rect x="496" y="187" width="170" height="70" rx="3" class="compute" />
+    <text x="581" y="216" text-anchor="middle" class="label">Softmax</text>
+    <text x="581" y="242" text-anchor="middle" class="body">每行归一化</text>
+    <path d="M674 222 H700" class="arrow" />
+    <rect x="710" y="177" width="170" height="92" rx="3" class="io" />
+    <text x="795" y="206" text-anchor="middle" class="label">HBM：P</text>
+    <text x="795" y="232" text-anchor="middle" class="body">写入 → 再读出</text>
+    <text x="795" y="256" text-anchor="middle" class="body">N × N</text>
+    <path d="M888 222 H914" class="arrow" />
+    <rect x="924" y="187" width="208" height="70" rx="3" class="compute" />
+    <text x="1028" y="216" text-anchor="middle" class="label">P × V → O</text>
+    <text x="1028" y="242" text-anchor="middle" class="body">输出写回 HBM</text>
+    <text x="600" y="316" text-anchor="middle" class="body">N = 8192、每元素 2 bytes：S 与 P 各 128
+        MiB，四次逻辑读写合计 512 MiB / head</text>
+
+    <rect x="42" y="380" width="1116" height="246" rx="3" class="panel" />
+    <text x="68" y="417" class="heading">FlashAttention：在片上逐块计算，逐块消费</text>
+    <rect x="68" y="458" width="190" height="92" rx="3" class="input" />
+    <text x="163" y="488" text-anchor="middle" class="label">HBM：Q / K / V</text>
+    <text x="163" y="516" text-anchor="middle" class="body">只装入当前数据块</text>
+    <path d="M270 503 H321" class="arrow" />
+    <rect x="333" y="446" width="522" height="116" rx="3" class="compute" />
+    <text x="594" y="477" text-anchor="middle" class="label">Shared memory + 寄存器</text>
+    <text x="594" y="508" text-anchor="middle" class="body">局部分数 → Online Softmax → 累积 V 的贡献</text>
+    <text x="594" y="540" text-anchor="middle" class="body">保留行状态，不保留完整 N × N 中间矩阵</text>
+    <path d="M867 503 H918" class="arrow" />
+    <rect x="930" y="458" width="202" height="92" rx="3" class="output" />
+    <text x="1031" y="488" text-anchor="middle" class="label">HBM：输出 O</text>
+    <text x="1031" y="516" text-anchor="middle" class="body">训练还保存行统计量</text>
+    <text x="600" y="600" text-anchor="middle" class="body">K/V 可因不同 Q 块被再次加载；“不写完整
+        S/P”不等于“每个输入只读一次”</text>
+
+    <text x="600" y="680" text-anchor="middle" class="label">KV Cache 省历史重算；FlashAttention
+        省当前计算中的中间结果搬运</text>
+</svg>

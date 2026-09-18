@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="650" viewBox="0 0 1200 650" role="img"
+    aria-labelledby="title desc">
+    <title id="title">因果 Attention 如何分块计算</title>
+    <desc id="desc">四个示意 token 是 The、cat、sat、down。固定 sat 与 down 的 Q 块，先计算它与 The、cat 的 K/V 块，再计算与
+        sat、down 的 K/V 块。sat 对未来 down 的位置被屏蔽。每次保留行最大值、指数和与加权输出累计值，不独立归一化每个块。</desc>
+    <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+            orient="auto">
+            <path d="M0 0 L10 5 L0 10 Z" fill="#111111" />
+        </marker>
+        <pattern id="masked" width="9" height="9" patternUnits="userSpaceOnUse">
+            <rect width="9" height="9" fill="#EEEEEE" />
+            <path d="M-2 2 L2 -2 M0 9 L9 0 M7 11 L11 7" stroke="#CCCCCC" stroke-width="1.5" />
+        </pattern>
+        <style>
+            text { font-family: Helvetica Neue, Segoe UI, sans-serif; letter-spacing: 0; }
+            .title { font-size: 30px; font-weight: 800; fill: #111111; }
+            .subtitle { font-size: 17px; fill: #333333; }
+            .heading { font-size: 21px; font-weight: 800; fill: #111111; }
+            .label { font-size: 18px; font-weight: 700; fill: #111111; }
+            .body { font-size: 16px; fill: #333333; }
+            .panel { fill: #F4F4F4; stroke: #111111; stroke-width: 3; }
+            .first { fill: #DDE0F1; stroke: #111111; stroke-width: 2.5; }
+            .second { fill: #F2E6D8; stroke: #111111; stroke-width: 2.5; }
+            .result { fill: #DCEBDF; stroke: #111111; stroke-width: 2.5; }
+            .arrow { fill: none; stroke: #111111; stroke-width: 3; marker-end: url(#arrow); }
+        </style>
+    </defs>
+    <rect width="1200" height="650" fill="#FFFFFF" />
+    <text x="600" y="46" text-anchor="middle" class="title">固定几行 Q，让 K/V 分批经过</text>
+    <text x="600" y="77" text-anchor="middle" class="subtitle">一小块分数用完就丢；每行的累计状态一直保留</text>
+
+    <rect x="40" y="111" width="526" height="469" rx="3" class="panel" />
+    <text x="64" y="147" class="heading">逻辑分数表：4 × 4</text>
+    <text x="264" y="180" text-anchor="middle" class="body">K/V 块 1</text>
+    <text x="408" y="180" text-anchor="middle" class="body">K/V 块 2</text>
+    <text x="228" y="205" text-anchor="middle" class="label">The</text>
+    <text x="300" y="205" text-anchor="middle" class="label">cat</text>
+    <text x="372" y="205" text-anchor="middle" class="label">sat</text>
+    <text x="444" y="205" text-anchor="middle" class="label">down</text>
+    <text x="171" y="265" text-anchor="end" class="label">The</text>
+    <text x="171" y="337" text-anchor="end" class="label">cat</text>
+    <text x="171" y="409" text-anchor="end" class="label">sat</text>
+    <text x="171" y="481" text-anchor="end" class="label">down</text>
+    <text x="67" y="399" class="body">当前</text>
+    <text x="67" y="424" class="body">Q 块</text>
+    <rect x="192" y="222" width="288" height="288" fill="#FFFFFF" stroke="#111111"
+        stroke-width="2.5" />
+    <path d="M264 222 H480 V438 H408 V366 H336 V294 H264 Z" fill="url(#masked)" />
+    <rect x="192" y="366" width="144" height="144" class="first" />
+    <path d="M336 366 H408 V438 H480 V510 H336 Z" fill="#F2E6D8" />
+    <path d="M264 222 V510 M336 222 V510 M408 222 V510 M192 294 H480 M192 366 H480 M192 438 H480"
+        fill="none" stroke="#111111" stroke-width="1.5" />
+    <rect x="336" y="366" width="144" height="144" fill="none" stroke="#111111" stroke-width="2.5" />
+    <rect x="184" y="358" width="304" height="160" fill="none" stroke="#111111" stroke-width="3" />
+    <text x="228" y="411" text-anchor="middle" class="label">①</text>
+    <text x="372" y="411" text-anchor="middle" class="label">②</text>
+    <text x="444" y="411" text-anchor="middle" class="label">×</text>
+    <text x="64" y="554" class="body">阴影：未来位置；sat 不能看 down</text>
+
+    <path d="M499 438 H601" class="arrow" />
+    <text x="890" y="146" text-anchor="middle" class="heading">片上处理当前 Q = [sat, down]</text>
+    <rect x="628" y="180" width="532" height="102" rx="3" class="first" />
+    <text x="652" y="211" class="label">① 读入 [The, cat] 的 K 和 V</text>
+    <text x="652" y="241" class="body">算局部分数，更新每行 m、ℓ、u</text>
+    <text x="652" y="266" class="body">这两列对 sat、down 都可见</text>
+    <path d="M894 291 V326" class="arrow" />
+    <rect x="628" y="336" width="532" height="102" rx="3" class="second" />
+    <text x="652" y="367" class="label">② 读入 [sat, down] 的 K 和 V</text>
+    <text x="652" y="397" class="body">先屏蔽 sat → down，再与旧状态合并</text>
+    <text x="652" y="422" class="body">不是每块各做一次独立的 Softmax</text>
+    <path d="M894 447 V482" class="arrow" />
+    <rect x="628" y="492" width="532" height="88" rx="3" class="result" />
+    <text x="894" y="526" text-anchor="middle" class="label">结束：每行 o = u / ℓ</text>
+    <text x="894" y="556" text-anchor="middle" class="body">写出 sat 和 down 的输出向量</text>
+    <text x="600" y="620" text-anchor="middle" class="label">分块改变处理顺序，不改变每个 query 能关注哪些 key</text>
+</svg>

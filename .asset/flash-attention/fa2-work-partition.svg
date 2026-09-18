@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="680" viewBox="0 0 1200 680" role="img"
+    aria-labelledby="title desc">
+    <title id="title">FlashAttention-2 的线程块并行与 warp 分工</title>
+    <desc id="desc">上方展示同一 head 的 Q 按行分配给独立线程块，分别输出 The、cat 和 sat、down 的结果。下方对比块内切 K/V 与切
+        Q：前者需要合并同一输出行的部分贡献，后者由各 warp 独立累计不同输出行，共享当前 K/V 块。</desc>
+    <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+            orient="auto">
+            <path d="M0 0 L10 5 L0 10 Z" fill="#111111" />
+        </marker>
+        <style>
+            text { font-family: Helvetica Neue, Segoe UI, sans-serif; letter-spacing: 0; }
+            .title { font-size: 30px; font-weight: 800; fill: #111111; }
+            .subtitle { font-size: 17px; fill: #333333; }
+            .heading { font-size: 20px; font-weight: 800; fill: #111111; }
+            .label { font-size: 18px; font-weight: 700; fill: #111111; }
+            .body { font-size: 16px; fill: #333333; }
+            .small { font-size: 15px; fill: #444444; }
+            .panel { fill: #F4F4F4; stroke: #111111; stroke-width: 3; }
+            .first { fill: #DDE0F1; stroke: #111111; stroke-width: 2.5; }
+            .second { fill: #F2E6D8; stroke: #111111; stroke-width: 2.5; }
+            .result { fill: #DCEBDF; stroke: #111111; stroke-width: 2.5; }
+            .arrow { fill: none; stroke: #111111; stroke-width: 3; marker-end: url(#arrow); }
+        </style>
+    </defs>
+    <rect width="1200" height="680" fill="#FFFFFF" />
+    <text x="600" y="46" text-anchor="middle" class="title">FA2：让每组线程负责清楚的一部分输出</text>
+    <text x="600" y="77" text-anchor="middle" class="subtitle">上层增加独立任务；下层减少同一结果在多组线程之间的合并</text>
+
+    <rect x="40" y="111" width="1120" height="174" rx="3" class="panel" />
+    <text x="64" y="146" class="heading">线程块之间：沿 Q 行拆任务</text>
+    <text x="64" y="193" class="label">同一个 head</text>
+    <text x="64" y="222" class="body">不只按 batch / head 并行</text>
+    <rect x="340" y="167" width="362" height="74" rx="3" class="first" />
+    <text x="521" y="195" text-anchor="middle" class="label">线程块 A：Q = [The, cat]</text>
+    <text x="521" y="222" text-anchor="middle" class="body">独立写出 The、cat 的输出</text>
+    <rect x="750" y="167" width="386" height="74" rx="3" class="second" />
+    <text x="943" y="195" text-anchor="middle" class="label">线程块 B：Q = [sat, down]</text>
+    <text x="943" y="222" text-anchor="middle" class="body">独立写出 sat、down 的输出</text>
+    <text x="738" y="266" text-anchor="middle" class="small">分别读取可见 K/V；两组写入的是不同输出行</text>
+
+    <rect x="40" y="313" width="538" height="305" rx="3" class="panel" />
+    <text x="64" y="349" class="heading">块内切 K/V：同一行由多组 warp 累计</text>
+    <text x="309" y="380" text-anchor="middle" class="body">例如共同计算 query down</text>
+    <rect x="64" y="404" width="222" height="74" rx="3" class="first" />
+    <text x="175" y="433" text-anchor="middle" class="label">warp A</text>
+    <text x="175" y="460" text-anchor="middle" class="body">K/V 的一部分</text>
+    <rect x="332" y="404" width="222" height="74" rx="3" class="second" />
+    <text x="443" y="433" text-anchor="middle" class="label">warp B</text>
+    <text x="443" y="460" text-anchor="middle" class="body">K/V 的另一部分</text>
+    <path d="M175 487 V504 H268 V521" class="arrow" />
+    <path d="M443 487 V504 H350 V521" class="arrow" />
+    <rect x="91" y="533" width="436" height="49" rx="3" class="result" />
+    <text x="309" y="564" text-anchor="middle" class="label">合并同一输出行的部分贡献</text>
+    <text x="309" y="603" text-anchor="middle" class="small">写共享内存 → 同步 → 合并</text>
+
+    <rect x="622" y="313" width="538" height="305" rx="3" class="panel" />
+    <text x="646" y="349" class="heading">块内切 Q：每组 warp 负责不同输出行</text>
+    <text x="891" y="380" text-anchor="middle" class="body">共享当前 K/V 块，分别应用掩码</text>
+    <rect x="646" y="404" width="222" height="74" rx="3" class="first" />
+    <text x="757" y="433" text-anchor="middle" class="label">warp A：Q = sat</text>
+    <text x="757" y="460" text-anchor="middle" class="body">保留自己的行状态</text>
+    <rect x="914" y="404" width="222" height="74" rx="3" class="second" />
+    <text x="1025" y="433" text-anchor="middle" class="label">warp B：Q = down</text>
+    <text x="1025" y="460" text-anchor="middle" class="body">保留自己的行状态</text>
+    <path d="M757 487 V521" class="arrow" />
+    <path d="M1025 487 V521" class="arrow" />
+    <rect x="646" y="533" width="222" height="49" rx="3" class="result" />
+    <text x="757" y="564" text-anchor="middle" class="label">sat 的输出</text>
+    <rect x="914" y="533" width="222" height="49" rx="3" class="result" />
+    <text x="1025" y="564" text-anchor="middle" class="label">down 的输出</text>
+    <text x="891" y="603" text-anchor="middle" class="small">无需跨 warp 合并同一输出行</text>
+    <text x="600" y="657" text-anchor="middle" class="small">示意为两组分工；真实块大小与 warp
+        数随内核配置变化，加载和缓冲复用仍可能需要同步</text>
+</svg>

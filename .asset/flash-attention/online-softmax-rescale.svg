@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="650" viewBox="0 0 1200 650" role="img"
+    aria-labelledby="title desc">
+    <title id="title">Online Softmax：最大值改变时如何修正旧结果</title>
+    <desc id="desc">query down 对 The、cat、sat、down 的示意分数为 1、2、3、4，值为 10、20、30、40。第一块以 2 为最大值，得到分母
+        1.3679 和加权和 23.6788。第二块把最大值改为 4，旧分母和旧加权和同时乘 exp(-2)，再加新块贡献，最终输出约 34.9265，与整行计算一致。</desc>
+    <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+            orient="auto">
+            <path d="M0 0 L10 5 L0 10 Z" fill="#111111" />
+        </marker>
+        <style>
+            text { font-family: Helvetica Neue, Segoe UI, sans-serif; letter-spacing: 0; }
+            .title { font-size: 30px; font-weight: 800; fill: #111111; }
+            .subtitle { font-size: 17px; fill: #333333; }
+            .heading { font-size: 20px; font-weight: 800; fill: #111111; }
+            .label { font-size: 18px; font-weight: 700; fill: #111111; }
+            .body { font-size: 16px; fill: #333333; }
+            .small { font-size: 15px; fill: #444444; }
+            .panel { fill: #F4F4F4; stroke: #111111; stroke-width: 3; }
+            .first { fill: #DDE0F1; stroke: #111111; stroke-width: 2.5; }
+            .second { fill: #F2E6D8; stroke: #111111; stroke-width: 2.5; }
+            .result { fill: #DCEBDF; stroke: #111111; stroke-width: 2.5; }
+            .arrow { fill: none; stroke: #111111; stroke-width: 3; marker-end: url(#arrow); }
+        </style>
+    </defs>
+    <rect width="1200" height="650" fill="#FFFFFF" />
+    <text x="600" y="46" text-anchor="middle" class="title">新最大值出现：旧贡献统一“换标尺”</text>
+    <text x="600" y="77" text-anchor="middle" class="subtitle">只看 query down 的一行；分数和 V 是可手算的示意值</text>
+
+    <rect x="40" y="108" width="538" height="140" rx="3" class="first" />
+    <text x="64" y="140" class="heading">块 A</text>
+    <text x="210" y="177" text-anchor="middle" class="label">The</text>
+    <text x="430" y="177" text-anchor="middle" class="label">cat</text>
+    <text x="210" y="211" text-anchor="middle" class="body">分数 1 · V = 10</text>
+    <text x="430" y="211" text-anchor="middle" class="body">分数 2 · V = 20</text>
+    <path d="M319 155 V225" stroke="#111111" stroke-width="1.5" />
+    <rect x="622" y="108" width="538" height="140" rx="3" class="second" />
+    <text x="646" y="140" class="heading">块 B</text>
+    <text x="792" y="177" text-anchor="middle" class="label">sat</text>
+    <text x="1012" y="177" text-anchor="middle" class="label">down</text>
+    <text x="792" y="211" text-anchor="middle" class="body">分数 3 · V = 30</text>
+    <text x="1012" y="211" text-anchor="middle" class="body">分数 4 · V = 40</text>
+    <path d="M901 155 V225" stroke="#111111" stroke-width="1.5" />
+
+    <rect x="40" y="284" width="332" height="270" rx="3" class="panel" />
+    <text x="62" y="321" class="heading">① 先处理块 A</text>
+    <text x="62" y="363" class="label">当前最大值 m = 2</text>
+    <text x="62" y="397" class="body">指数权重：[exp(-1), 1]</text>
+    <text x="62" y="431" class="body">ℓ = 1.3679</text>
+    <text x="62" y="465" class="body">u = 23.6788</text>
+    <text x="62" y="516" class="small">ℓ 和 u 都使用“减去 2”的标尺</text>
+    <path d="M380 418 H402" class="arrow" />
+
+    <rect x="414" y="284" width="372" height="270" rx="3" class="panel" />
+    <text x="436" y="321" class="heading">② 块 B 把最大值推到 4</text>
+    <text x="436" y="363" class="label">旧贡献 × exp(2 - 4)</text>
+    <text x="436" y="397" class="body">缩放系数 α = 0.1353</text>
+    <text x="436" y="431" class="body">旧 ℓ：1.3679 → 0.1851</text>
+    <text x="436" y="465" class="body">旧 u：23.6788 → 3.2046</text>
+    <text x="436" y="516" class="small">不需要重新读取 The、cat 的分数</text>
+    <path d="M794 418 H816" class="arrow" />
+
+    <rect x="828" y="284" width="332" height="270" rx="3" class="result" />
+    <text x="850" y="321" class="heading">③ 加上块 B 的贡献</text>
+    <text x="850" y="363" class="label">全部使用“减去 4”的标尺</text>
+    <text x="850" y="397" class="body">新权重：[exp(-1), 1]</text>
+    <text x="850" y="431" class="body">ℓ = 0.1851 + 1.3679</text>
+    <text x="850" y="465" class="body">u = 3.2046 + 51.0364</text>
+    <text x="850" y="516" class="small">分母和分子必须一起修正</text>
+
+    <text x="600" y="598" text-anchor="middle" class="heading">O = u / ℓ = 54.2410 / 1.5530 ≈
+        34.9265</text>
+    <text x="600" y="630" text-anchor="middle" class="small">与整行 Softmax 的结果一致；小数仅为展示，计算时不逐步舍入</text>
+</svg>
