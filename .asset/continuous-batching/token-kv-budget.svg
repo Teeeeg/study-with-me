@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="670" viewBox="0 0 1200 670" role="img"
+    aria-labelledby="title desc">
+    <title id="title">请求数、token 预算与 KV 块是三种不同的限制</title>
+    <desc id="desc">最多三条请求、八个本轮输入 token，每个 KV 块保存四个 token，只有两个空闲块。A 从七到八个缓存 token 不增块；B 从八到九个需要一块；D
+        新做四个 Prefill token 需要一块。共用六个输入 token 和两个空闲块。若让 D 做六个 token，虽然共八个 token 不超限，却需要三个 KV 块而无法分配。</desc>
+    <defs>
+        <style>
+      text { font-family: Helvetica Neue, Segoe UI, sans-serif; letter-spacing: 0; }
+      .title { font-size: 30px; font-weight: 800; fill: #111111; }
+      .subtitle { font-size: 16px; fill: #333333; }
+      .heading { font-size: 20px; font-weight: 800; fill: #111111; }
+      .body { font-size: 18px; fill: #333333; }
+      .label { font-size: 19px; font-weight: 700; fill: #111111; }
+      .small { font-size: 16px; fill: #444444; }
+      .hot { font-size: 18px; font-weight: 700; fill: #B42318; }
+      .panel { fill: #F4F4F4; stroke: #111111; stroke-width: 3; }
+      .prefill { fill: #DDE0F1; stroke: #111111; stroke-width: 2.5; }
+      .decode { fill: #DCEBDF; stroke: #111111; stroke-width: 2.5; }
+      .empty { fill: #FFFFFF; stroke: #999999; stroke-width: 2; stroke-dasharray: 5 4; }
+      .edge { fill: none; stroke: #111111; stroke-width: 2; }
+    </style>
+    </defs>
+    <rect width="1200" height="670" fill="#FFFFFF" />
+    <text x="600" y="45" text-anchor="middle" class="title">token 预算有余，不代表 KV 空间也有余</text>
+    <text x="600" y="77" text-anchor="middle" class="subtitle">独立示例：本轮最多 3 条请求、8 个输入 token；每个 KV 块容纳
+        4 个 token</text>
+
+    <rect x="40" y="110" width="1120" height="185" rx="3" class="panel" />
+    <text x="65" y="145" class="heading">1. 本轮计算：只用了 6 / 8 个 token</text>
+    <text x="1130" y="145" text-anchor="end" class="body">请求数：A / B / D，已满 3 / 3</text>
+    <rect x="80" y="170" width="112" height="46" rx="3" class="decode" />
+    <rect x="208" y="170" width="112" height="46" rx="3" class="decode" />
+    <rect x="336" y="170" width="112" height="46" rx="3" class="prefill" />
+    <rect x="464" y="170" width="112" height="46" rx="3" class="prefill" />
+    <rect x="592" y="170" width="112" height="46" rx="3" class="prefill" />
+    <rect x="720" y="170" width="112" height="46" rx="3" class="prefill" />
+    <rect x="848" y="170" width="112" height="46" rx="3" class="empty" />
+    <rect x="976" y="170" width="112" height="46" rx="3" class="empty" />
+    <text x="136" y="200" text-anchor="middle" class="label">A</text>
+    <text x="264" y="200" text-anchor="middle" class="label">B</text>
+    <text x="392" y="200" text-anchor="middle" class="label">D · 1</text>
+    <text x="520" y="200" text-anchor="middle" class="label">D · 2</text>
+    <text x="648" y="200" text-anchor="middle" class="label">D · 3</text>
+    <text x="776" y="200" text-anchor="middle" class="label">D · 4</text>
+    <text x="904" y="200" text-anchor="middle" class="small">未用</text>
+    <text x="1032" y="200" text-anchor="middle" class="small">未用</text>
+    <text x="136" y="256" text-anchor="middle" class="body">Decode</text>
+    <text x="264" y="256" text-anchor="middle" class="body">Decode</text>
+    <path d="M336 229 V237 H832 V229" class="edge" />
+    <text x="584" y="266" text-anchor="middle" class="body">D 的 Prefill chunk：4 个输入 token</text>
+    <text x="968" y="256" text-anchor="middle" class="small">剩余预算 = 2</text>
+
+    <rect x="40" y="320" width="1120" height="231" rx="3" class="panel" />
+    <text x="65" y="355" class="heading">2. KV 分配：两个空闲块已经全部用完</text>
+    <text x="120" y="391" text-anchor="middle" class="small">请求</text>
+    <text x="375" y="391" text-anchor="middle" class="small">已缓存 → 本轮计算后</text>
+    <text x="660" y="391" text-anchor="middle" class="small">新增块数</text>
+    <text x="955" y="391" text-anchor="middle" class="small">原因</text>
+    <path d="M70 405 H1130" class="edge" />
+    <text x="120" y="435" text-anchor="middle" class="label">A</text>
+    <text x="375" y="435" text-anchor="middle" class="body">7 → 8</text>
+    <text x="660" y="435" text-anchor="middle" class="label">0</text>
+    <text x="955" y="435" text-anchor="middle" class="body">原有块还剩一格</text>
+    <text x="120" y="477" text-anchor="middle" class="label">B</text>
+    <text x="375" y="477" text-anchor="middle" class="body">8 → 9</text>
+    <text x="660" y="477" text-anchor="middle" class="label">1</text>
+    <text x="955" y="477" text-anchor="middle" class="body">跨过块边界</text>
+    <text x="120" y="519" text-anchor="middle" class="label">D</text>
+    <text x="375" y="519" text-anchor="middle" class="body">0 → 4</text>
+    <text x="660" y="519" text-anchor="middle" class="label">1</text>
+    <text x="955" y="519" text-anchor="middle" class="body">保存首个 Prefill chunk</text>
+
+    <rect x="40" y="576" width="1120" height="45" rx="3" fill="#F2D9D8" stroke="#B42318"
+        stroke-width="2.5" />
+    <text x="600" y="605" text-anchor="middle" class="hot">把 D 扩到 6 个 token？计算量是 8 / 8，但新增 KV 要 3
+        块，只有 2 块可用。</text>
+    <text x="600" y="652" text-anchor="middle" class="small">示例不含前缀共享、额外预留或滑动窗口；本轮可行也不保证以后不会缺 KV 空间</text>
+</svg>

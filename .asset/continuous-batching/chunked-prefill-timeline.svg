@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="710" viewBox="0 0 1200 710" role="img"
+    aria-labelledby="title desc">
+    <title id="title">Chunked Prefill 缩短单次阻塞，但不省掉 Prompt 的计算</title>
+    <desc id="desc">上图在两次 Decode 之间插入一段完整长 Prefill，形成较长输出间隔。下图把同一个 Prompt 分为三块，分别与 A 和 B 的 Decode
+        组成较小执行步骤，A 和 B 在每步后继续输出。D 在最后一块 Prefill 完成后才输出首 token。两条时间线长度不按比例，不代表分块总时间相同或更短。</desc>
+    <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+            orient="auto">
+            <path d="M0 0 L10 5 L0 10 Z" fill="#111111" />
+        </marker>
+        <style>
+      text { font-family: Helvetica Neue, Segoe UI, sans-serif; letter-spacing: 0; }
+      .title { font-size: 30px; font-weight: 800; fill: #111111; }
+      .subtitle { font-size: 16px; fill: #333333; }
+      .heading { font-size: 20px; font-weight: 800; fill: #111111; }
+      .body { font-size: 17px; fill: #333333; }
+      .small { font-size: 15px; fill: #444444; }
+      .hot { font-size: 17px; font-weight: 700; fill: #B42318; }
+      .inverse { font-size: 16px; font-weight: 700; fill: #FFFFFF; }
+      .panel { fill: #F4F4F4; stroke: #111111; stroke-width: 3; }
+      .prefill { fill: #DDE0F1; stroke: #111111; stroke-width: 2.5; }
+      .decode { fill: #DCEBDF; stroke: #111111; stroke-width: 2.5; }
+      .edge { fill: none; stroke: #111111; stroke-width: 2.5; }
+    </style>
+    </defs>
+    <rect width="1200" height="710" fill="#FFFFFF" />
+    <text x="600" y="45" text-anchor="middle" class="title">长 Prefill 切开后，Decode 可以更频繁地推进</text>
+    <text x="600" y="77" text-anchor="middle" class="subtitle">A / B 已经在出字，D 是新到的长 Prompt；紫色 =
+        Prefill，绿色 = Decode</text>
+
+    <rect x="40" y="108" width="1120" height="221" rx="3" class="panel" />
+    <text x="65" y="143" class="heading">1. 整段 Prefill：一次占用较长执行时间</text>
+    <rect x="80" y="166" width="150" height="58" rx="3" class="decode" />
+    <rect x="230" y="166" width="620" height="58" rx="3" class="prefill" />
+    <rect x="850" y="166" width="210" height="58" rx="3" class="decode" />
+    <text x="155" y="201" text-anchor="middle" class="body">A / B Decode</text>
+    <text x="540" y="201" text-anchor="middle" class="body">D 的完整 Prefill</text>
+    <text x="955" y="201" text-anchor="middle" class="body">A / B Decode</text>
+    <path d="M230 225 V239 M850 225 V239 M1060 225 V239" class="edge" />
+    <text x="230" y="261" text-anchor="middle" class="small">A / B 出字</text>
+    <text x="850" y="261" text-anchor="middle" class="small">D 首 token</text>
+    <text x="1060" y="261" text-anchor="middle" class="small">A / B 出字</text>
+    <path d="M230 278 V288 H1060 V278" stroke="#B42318" stroke-width="2.5" fill="none" />
+    <text x="645" y="314" text-anchor="middle" class="hot">A / B 的这次输出间隔，被长 Prefill 拉大</text>
+
+    <rect x="40" y="355" width="1120" height="227" rx="3" class="panel" />
+    <text x="65" y="390" class="heading">2. 分块并混合调度：给 A / B 持续执行的机会</text>
+    <text x="253" y="421" text-anchor="middle" class="small">混合步骤 1</text>
+    <text x="573" y="421" text-anchor="middle" class="small">混合步骤 2</text>
+    <text x="893" y="421" text-anchor="middle" class="small">混合步骤 3</text>
+    <rect x="110" y="436" width="285" height="38" rx="3" class="prefill" />
+    <rect x="110" y="474" width="285" height="38" rx="3" class="decode" />
+    <rect x="430" y="436" width="285" height="38" rx="3" class="prefill" />
+    <rect x="430" y="474" width="285" height="38" rx="3" class="decode" />
+    <rect x="750" y="436" width="285" height="38" rx="3" class="prefill" />
+    <rect x="750" y="474" width="285" height="38" rx="3" class="decode" />
+    <text x="253" y="461" text-anchor="middle" class="body">D Prefill · 第 1 块</text>
+    <text x="573" y="461" text-anchor="middle" class="body">D Prefill · 第 2 块</text>
+    <text x="893" y="461" text-anchor="middle" class="body">D Prefill · 最后一块</text>
+    <text x="253" y="499" text-anchor="middle" class="body">A / B Decode</text>
+    <text x="573" y="499" text-anchor="middle" class="body">A / B Decode</text>
+    <text x="893" y="499" text-anchor="middle" class="body">A / B Decode</text>
+    <path d="M253 514 V533 M573 514 V533 M893 514 V533" class="edge" />
+    <text x="253" y="558" text-anchor="middle" class="body">A / B 出字</text>
+    <text x="573" y="558" text-anchor="middle" class="body">A / B 出字</text>
+    <text x="893" y="558" text-anchor="middle" class="body">A / B 出字 + D 首 token</text>
+
+    <text x="600" y="615" text-anchor="middle" class="small">下图每一列表示一个执行批次的组成，不表示 Prefill 与 Decode
+        必然在硬件上同时运行。</text>
+    <text x="600" y="642" text-anchor="middle" class="small">长度不按比例；切块仍要处理整个 Prompt，还可能增加轮次和启动开销。</text>
+    <rect x="40" y="667" width="1120" height="30" rx="3" fill="#111111" />
+    <text x="600" y="688" text-anchor="middle" class="inverse">常见取舍：让已开始生成的请求少停顿，但新请求的首 token 可能更晚到达</text>
+</svg>

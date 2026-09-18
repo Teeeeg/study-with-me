@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="690" viewBox="0 0 1200 690" role="img"
+    aria-labelledby="title desc">
+    <title id="title">一轮连续批处理：候选、预算、前向与结果更新</title>
+    <desc id="desc">Waiting 和 Running 请求构成本轮候选。调度器分配请求数、token 与 KV 预算，GPU 处理本轮输入并写入对应
+        KV，结果处理更新进度与停止状态。未结束的请求继续保留，完成或取消的请求安全释放引用。新采样的 token 在后续作为输入时才生成自己的 KV。</desc>
+    <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+            orient="auto">
+            <path d="M0 0 L10 5 L0 10 Z" fill="#111111" />
+        </marker>
+        <style>
+      text { font-family: Helvetica Neue, Segoe UI, sans-serif; letter-spacing: 0; }
+      .title { font-size: 30px; font-weight: 800; fill: #111111; }
+      .subtitle { font-size: 16px; fill: #333333; }
+      .heading { font-size: 20px; font-weight: 800; fill: #111111; }
+      .body { font-size: 17px; fill: #333333; }
+      .small { font-size: 15px; fill: #444444; }
+      .inverse { font-size: 16px; font-weight: 700; fill: #FFFFFF; }
+      .panel { fill: #F4F4F4; stroke: #111111; stroke-width: 3; }
+      .queue { fill: #F2E6D8; stroke: #111111; stroke-width: 2.5; }
+      .running { fill: #DDE0F1; stroke: #111111; stroke-width: 2.5; }
+      .compute { fill: #DCEBDF; stroke: #111111; stroke-width: 2.5; }
+      .done { fill: #F2D9D8; stroke: #111111; stroke-width: 2.5; }
+      .arrow { fill: none; stroke: #111111; stroke-width: 3; marker-end: url(#arrow); }
+    </style>
+    </defs>
+    <rect width="1200" height="690" fill="#FFFFFF" />
+    <text x="600" y="45" text-anchor="middle" class="title">调度的单位，是本轮要计算的输入 token</text>
+    <text x="600" y="77" text-anchor="middle" class="subtitle">先制定本轮计划，再执行计算和处理结果；不是把整个请求一次跑到底</text>
+
+    <rect x="60" y="117" width="280" height="127" rx="3" class="queue" />
+    <text x="200" y="153" text-anchor="middle" class="heading">Waiting：尚待调度</text>
+    <text x="200" y="185" text-anchor="middle" class="body">新请求 / 抢占后待恢复</text>
+    <text x="200" y="216" text-anchor="middle" class="small">输入与依赖就绪后才可选</text>
+    <rect x="410" y="117" width="330" height="127" rx="3" class="running" />
+    <text x="575" y="153" text-anchor="middle" class="heading">Running：已接纳、未结束</text>
+    <text x="575" y="185" text-anchor="middle" class="body">部分 Prefill / 正在 Decode</text>
+    <text x="575" y="216" text-anchor="middle" class="small">有些请求本轮暂不参与</text>
+    <path d="M200 244 V275 H240 V300" class="arrow" />
+    <path d="M500 244 V275 H325 V300" class="arrow" />
+    <path d="M1000 300 V185 H750" class="arrow" />
+    <text x="884" y="167" text-anchor="middle" class="body">未结束：更新状态</text>
+
+    <rect x="60" y="310" width="300" height="139" rx="3" class="queue" />
+    <text x="210" y="348" text-anchor="middle" class="heading">1. 选人 + 分预算</text>
+    <text x="210" y="384" text-anchor="middle" class="body">请求数、输入 token、KV 块</text>
+    <text x="210" y="420" text-anchor="middle" class="small">得到本轮各请求的计算范围</text>
+    <rect x="455" y="310" width="300" height="139" rx="3" class="compute" />
+    <text x="605" y="348" text-anchor="middle" class="heading">2. 执行模型前向</text>
+    <text x="605" y="384" text-anchor="middle" class="body">Prefill chunk / Decode</text>
+    <text x="605" y="420" text-anchor="middle" class="small">写入本轮输入位置的 K/V</text>
+    <rect x="850" y="310" width="300" height="139" rx="3" class="running" />
+    <text x="1000" y="348" text-anchor="middle" class="heading">3. 处理输出</text>
+    <text x="1000" y="384" text-anchor="middle" class="body">采样结果、进度、停止条件</text>
+    <text x="1000" y="420" text-anchor="middle" class="small">保留下一轮要处理的 token</text>
+    <path d="M368 375 H445" class="arrow" />
+    <path d="M763 375 H840" class="arrow" />
+    <path d="M930 449 V492 H210 V459" class="arrow" />
+    <text x="570" y="480" text-anchor="middle" class="body">下一轮：更新候选与资源，重新选择</text>
+
+    <rect x="60" y="550" width="720" height="74" rx="3" class="panel" />
+    <text x="85" y="581" class="heading">采样出的新 token，还没有自己的 KV</text>
+    <text x="85" y="610" class="body">它在后续作为模型输入时才生成 KV；部分 Prefill 还不能输出首 token。</text>
+    <path d="M1080 449 V540" class="arrow" />
+    <text x="1062" y="523" text-anchor="end" class="small">完成 / 取消</text>
+    <rect x="850" y="550" width="300" height="74" rx="3" class="done" />
+    <text x="1000" y="582" text-anchor="middle" class="heading">Finished / Aborted</text>
+    <text x="1000" y="610" text-anchor="middle" class="body">安全回收请求引用</text>
+
+    <rect x="40" y="650" width="1120" height="30" rx="3" fill="#111111" />
+    <text x="600" y="671" text-anchor="middle" class="inverse">一个调度迭代可包含多个 kernel；CPU 与 GPU 也可以异步重叠</text>
+</svg>

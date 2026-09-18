@@ -1,0 +1,118 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="750" viewBox="0 0 1200 750" role="img"
+    aria-labelledby="title desc">
+    <title id="title">静态批次与连续批处理：新请求何时可以加入</title>
+    <desc id="desc">两组时间线使用相同请求。A、B、C 还需两、四、三轮 Decode。D 在第三轮前到达，E 在第四轮前到达。静态批次到第五轮才执行 D 和 E 的
+        Prefill；连续批处理在第三轮接纳 D、第四轮接纳 E。每个新请求都先 Prefill 再 Decode。轮次不是等长时间，逻辑位置不是硬件槽位。</desc>
+    <defs>
+        <pattern id="empty" width="10" height="10" patternUnits="userSpaceOnUse">
+            <path d="M0 10 L10 0" stroke="#DDDDDD" stroke-width="1" />
+        </pattern>
+        <style>
+      text { font-family: Helvetica Neue, Segoe UI, sans-serif; letter-spacing: 0; }
+      .title { font-size: 30px; font-weight: 800; fill: #111111; }
+      .subtitle { font-size: 16px; fill: #333333; }
+      .heading { font-size: 20px; font-weight: 800; fill: #111111; }
+      .body { font-size: 17px; fill: #333333; }
+      .label { font-size: 18px; font-weight: 700; fill: #111111; }
+      .small { font-size: 15px; fill: #444444; }
+      .inverse { font-size: 16px; font-weight: 700; fill: #FFFFFF; }
+      .panel { fill: #F4F4F4; stroke: #111111; stroke-width: 3; }
+      .prefill { fill: #DDE0F1; stroke: #111111; stroke-width: 2.5; }
+      .decode { fill: #DCEBDF; stroke: #111111; stroke-width: 2.5; }
+      .empty { fill: url(#empty); stroke: #999999; stroke-width: 1.5; stroke-dasharray: 5 4; }
+    </style>
+    </defs>
+    <rect width="1200" height="750" fill="#FFFFFF" />
+    <text x="600" y="46" text-anchor="middle" class="title">不是等整批结束，而是每轮重新决定谁参与</text>
+    <text x="600" y="78" text-anchor="middle" class="subtitle">D 在第 3 轮前到达，E 在第 4 轮前到达；紫色 =
+        Prefill，绿色 = Decode，终 = 完成</text>
+
+    <rect x="40" y="110" width="1120" height="255" rx="3" class="panel" />
+    <text x="65" y="145" class="heading">1. 固定成员：空出位置也要等 B 结束</text>
+    <text x="92" y="184" text-anchor="middle" class="small">逻辑位置</text>
+    <text x="261" y="184" text-anchor="middle" class="body">轮 1</text>
+    <text x="415" y="184" text-anchor="middle" class="body">轮 2</text>
+    <text x="569" y="184" text-anchor="middle" class="body">轮 3</text>
+    <text x="723" y="184" text-anchor="middle" class="body">轮 4</text>
+    <text x="877" y="184" text-anchor="middle" class="body">轮 5</text>
+    <text x="1031" y="184" text-anchor="middle" class="body">轮 6</text>
+    <text x="92" y="227" text-anchor="middle" class="body">位置 1</text>
+    <text x="92" y="274" text-anchor="middle" class="body">位置 2</text>
+    <text x="92" y="321" text-anchor="middle" class="body">位置 3</text>
+    <rect x="190" y="201" width="142" height="39" rx="3" class="decode" />
+    <rect x="344" y="201" width="142" height="39" rx="3" class="decode" />
+    <rect x="498" y="201" width="296" height="39" rx="3" class="empty" />
+    <rect x="806" y="201" width="142" height="39" rx="3" class="prefill" />
+    <rect x="960" y="201" width="142" height="39" rx="3" class="decode" />
+    <text x="261" y="227" text-anchor="middle" class="label">A</text>
+    <text x="415" y="227" text-anchor="middle" class="label">A 终</text>
+    <text x="646" y="227" text-anchor="middle" class="body">空缺，不能补入 D</text>
+    <text x="877" y="227" text-anchor="middle" class="label">D Prefill</text>
+    <text x="1031" y="227" text-anchor="middle" class="label">D 终</text>
+    <rect x="190" y="248" width="142" height="39" rx="3" class="decode" />
+    <rect x="344" y="248" width="142" height="39" rx="3" class="decode" />
+    <rect x="498" y="248" width="142" height="39" rx="3" class="decode" />
+    <rect x="652" y="248" width="142" height="39" rx="3" class="decode" />
+    <rect x="806" y="248" width="142" height="39" rx="3" class="prefill" />
+    <rect x="960" y="248" width="142" height="39" rx="3" class="decode" />
+    <text x="261" y="274" text-anchor="middle" class="label">B</text>
+    <text x="415" y="274" text-anchor="middle" class="label">B</text>
+    <text x="569" y="274" text-anchor="middle" class="label">B</text>
+    <text x="723" y="274" text-anchor="middle" class="label">B 终</text>
+    <text x="877" y="274" text-anchor="middle" class="label">E Prefill</text>
+    <text x="1031" y="274" text-anchor="middle" class="label">E 终</text>
+    <rect x="190" y="295" width="142" height="39" rx="3" class="decode" />
+    <rect x="344" y="295" width="142" height="39" rx="3" class="decode" />
+    <rect x="498" y="295" width="142" height="39" rx="3" class="decode" />
+    <rect x="652" y="295" width="450" height="39" rx="3" class="empty" />
+    <text x="261" y="321" text-anchor="middle" class="label">C</text>
+    <text x="415" y="321" text-anchor="middle" class="label">C</text>
+    <text x="569" y="321" text-anchor="middle" class="label">C 终</text>
+
+    <rect x="40" y="395" width="1120" height="255" rx="3" class="panel" />
+    <text x="65" y="430" class="heading">2. 连续批处理：A / C 完成后，下一轮即可接纳新工作</text>
+    <text x="92" y="469" text-anchor="middle" class="small">逻辑位置</text>
+    <text x="261" y="469" text-anchor="middle" class="body">轮 1</text>
+    <text x="415" y="469" text-anchor="middle" class="body">轮 2</text>
+    <text x="569" y="469" text-anchor="middle" class="body">轮 3</text>
+    <text x="723" y="469" text-anchor="middle" class="body">轮 4</text>
+    <text x="877" y="469" text-anchor="middle" class="body">轮 5</text>
+    <text x="1031" y="469" text-anchor="middle" class="body">轮 6</text>
+    <text x="92" y="512" text-anchor="middle" class="body">位置 1</text>
+    <text x="92" y="559" text-anchor="middle" class="body">位置 2</text>
+    <text x="92" y="606" text-anchor="middle" class="body">位置 3</text>
+    <rect x="190" y="486" width="142" height="39" rx="3" class="decode" />
+    <rect x="344" y="486" width="142" height="39" rx="3" class="decode" />
+    <rect x="498" y="486" width="142" height="39" rx="3" class="prefill" />
+    <rect x="652" y="486" width="142" height="39" rx="3" class="decode" />
+    <rect x="806" y="486" width="296" height="39" rx="3" class="empty" />
+    <text x="261" y="512" text-anchor="middle" class="label">A</text>
+    <text x="415" y="512" text-anchor="middle" class="label">A 终</text>
+    <text x="569" y="512" text-anchor="middle" class="label">D Prefill</text>
+    <text x="723" y="512" text-anchor="middle" class="label">D 终</text>
+    <rect x="190" y="533" width="142" height="39" rx="3" class="decode" />
+    <rect x="344" y="533" width="142" height="39" rx="3" class="decode" />
+    <rect x="498" y="533" width="142" height="39" rx="3" class="decode" />
+    <rect x="652" y="533" width="142" height="39" rx="3" class="decode" />
+    <rect x="806" y="533" width="296" height="39" rx="3" class="empty" />
+    <text x="261" y="559" text-anchor="middle" class="label">B</text>
+    <text x="415" y="559" text-anchor="middle" class="label">B</text>
+    <text x="569" y="559" text-anchor="middle" class="label">B</text>
+    <text x="723" y="559" text-anchor="middle" class="label">B 终</text>
+    <rect x="190" y="580" width="142" height="39" rx="3" class="decode" />
+    <rect x="344" y="580" width="142" height="39" rx="3" class="decode" />
+    <rect x="498" y="580" width="142" height="39" rx="3" class="decode" />
+    <rect x="652" y="580" width="142" height="39" rx="3" class="prefill" />
+    <rect x="806" y="580" width="142" height="39" rx="3" class="decode" />
+    <rect x="960" y="580" width="142" height="39" rx="3" class="empty" />
+    <text x="261" y="606" text-anchor="middle" class="label">C</text>
+    <text x="415" y="606" text-anchor="middle" class="label">C</text>
+    <text x="569" y="606" text-anchor="middle" class="label">C 终</text>
+    <text x="723" y="606" text-anchor="middle" class="label">E Prefill</text>
+    <text x="877" y="606" text-anchor="middle" class="label">E 终</text>
+
+    <text x="600" y="687" text-anchor="middle" class="small">空缺不是固定 GPU 核心；每轮耗时不同，轮数之比不能当成加速倍数</text>
+    <rect x="40" y="708" width="1120" height="30" rx="3" fill="#111111" />
+    <text x="600" y="729" text-anchor="middle" class="inverse">新请求先 Prefill 再 Decode；能否接纳，还要检查 token
+        预算与 KV 容量</text>
+</svg>
