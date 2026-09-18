@@ -435,6 +435,14 @@ FlashInfer 是面向推理的内核库，FlashMLA 则围绕 MLA 注意力提供�
 - **不保存 P，为什么还能计算输出和梯度？** 前向直接累计 $u/\ell$；反向从输入和行摘要重建局部 P。
 - **用了 FlashAttention，长上下文 Decode 就不用读历史 KV 吗？** 仍然要读；它没有改变可见 token 的集合，也没有自动压缩 KV Cache。
 
+三代 FlashAttention 的核心理论可以归纳为：
+
+| 版本 | 核心问题 | 核心理论 | 关键机制 | 没有改变什么 |
+| --- | --- | --- | --- | --- |
+| FlashAttention-1 | 完整 S/P 在 HBM 中反复读写，IO 成为主要负担 | **IO-aware exact attention**：用分块和 Online Softmax 改变计算顺序，使中间矩阵无需完整物化 | Tiling、算子融合、在线归一化、反向重算 | 仍计算所有可见的 query-key 对，稠密计算量仍为 $\Theta(N^2d)$ |
+| FlashAttention-2 | IO 降低后，并行度、warp 通信和非矩阵乘工作限制利用率 | **更合理的工作划分**：沿 Q 行增加线程块并行，并让 warp 各自负责输出行 | 序列维度并行、split-Q、延迟归一化、减少归约与同步 | 延续 FA1 的分块与 Online Softmax，仍不物化完整 S/P |
+| FlashAttention-3 | Hopper 上异步搬运、矩阵乘与 Softmax 之间仍存在等待 | **异步流水线与硬件协同**：交错不同块的搬运和计算，让执行单元并行工作 | TMA、WGMMA、warp specialization、双缓冲、FP8 精度处理 | 同一块内的数据依赖仍存在；分块与在线归一化的算法基础不变 |
+
 ## 参考资料
 
 1. [FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness](https://arxiv.org/abs/2205.14135)：分块、IO 分析与反向重算。
