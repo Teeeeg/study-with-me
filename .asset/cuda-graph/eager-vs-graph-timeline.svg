@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="650" viewBox="0 0 1200 650" role="img"
+    aria-labelledby="title desc">
+    <title id="title">普通 CUDA 提交与 CUDA Graph 重放的时间线对比</title>
+    <desc id="desc">上半部分中，CPU 逐个提交四个 kernel，GPU 在短 kernel 之间可能等待下一次提交。下半部分中，CPU 只发起一次 graph
+        launch，GPU 按已经记录的依赖连续执行四个节点。图中长度为示意，不代表固定加速比。</desc>
+    <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+            orient="auto">
+            <path d="M0 0 L10 5 L0 10 Z" fill="#111111" />
+        </marker>
+        <style>
+      text { font-family: Helvetica Neue, Segoe UI, sans-serif; letter-spacing: 0; }
+      .title { font-size: 30px; font-weight: 800; fill: #111111; }
+      .subtitle { font-size: 16px; fill: #333333; }
+      .heading { font-size: 20px; font-weight: 800; fill: #111111; }
+      .body { font-size: 16px; fill: #333333; }
+      .small { font-size: 14px; fill: #444444; }
+      .inverse { font-size: 16px; font-weight: 700; fill: #FFFFFF; }
+      .panel { fill: #F4F4F4; stroke: #111111; stroke-width: 3; }
+      .cpu { fill: #F2E6D8; stroke: #111111; stroke-width: 2.5; }
+      .kernel { fill: #DCEBDF; stroke: #111111; stroke-width: 2.5; }
+      .graph { fill: #DDE0F1; stroke: #111111; stroke-width: 2.5; }
+      .idle { fill: #F2D9D8; stroke: #111111; stroke-width: 2; stroke-dasharray: 7 5; }
+      .line { fill: none; stroke: #111111; stroke-width: 3; }
+      .arrow { fill: none; stroke: #111111; stroke-width: 2.5; marker-end: url(#arrow); }
+    </style>
+    </defs>
+    <rect width="1200" height="650" fill="#FFFFFF" />
+    <text x="600" y="45" text-anchor="middle" class="title">相同的 GPU 工作，不同的提交方式</text>
+    <text x="600" y="76" text-anchor="middle" class="subtitle">Graph 减少 CPU 提交次数，并缩短短 kernel
+        之间可能出现的等待</text>
+
+    <rect x="50" y="108" width="1100" height="208" rx="3" class="panel" />
+    <text x="78" y="145" class="heading">普通执行：CPU 每轮逐个 launch</text>
+    <text x="80" y="190" class="body">CPU</text>
+    <rect x="165" y="166" width="130" height="42" rx="3" class="cpu" />
+    <rect x="380" y="166" width="130" height="42" rx="3" class="cpu" />
+    <rect x="595" y="166" width="130" height="42" rx="3" class="cpu" />
+    <rect x="810" y="166" width="130" height="42" rx="3" class="cpu" />
+    <text x="230" y="192" text-anchor="middle" class="small">launch A</text>
+    <text x="445" y="192" text-anchor="middle" class="small">launch B</text>
+    <text x="660" y="192" text-anchor="middle" class="small">launch C</text>
+    <text x="875" y="192" text-anchor="middle" class="small">launch D</text>
+    <text x="80" y="267" class="body">GPU</text>
+    <rect x="210" y="237" width="125" height="52" rx="3" class="kernel" />
+    <rect x="425" y="237" width="125" height="52" rx="3" class="kernel" />
+    <rect x="640" y="237" width="125" height="52" rx="3" class="kernel" />
+    <rect x="855" y="237" width="125" height="52" rx="3" class="kernel" />
+    <rect x="335" y="237" width="90" height="52" class="idle" />
+    <rect x="550" y="237" width="90" height="52" class="idle" />
+    <rect x="765" y="237" width="90" height="52" class="idle" />
+    <text x="272" y="269" text-anchor="middle" class="body">A</text>
+    <text x="487" y="269" text-anchor="middle" class="body">B</text>
+    <text x="702" y="269" text-anchor="middle" class="body">C</text>
+    <text x="917" y="269" text-anchor="middle" class="body">D</text>
+    <text x="380" y="307" text-anchor="middle" class="small">可能等待</text>
+    <text x="595" y="307" text-anchor="middle" class="small">可能等待</text>
+    <text x="810" y="307" text-anchor="middle" class="small">可能等待</text>
+    <path d="M230 210 L255 232 M445 210 L470 232 M660 210 L685 232 M875 210 L900 232" class="arrow" />
+
+    <rect x="50" y="344" width="1100" height="214" rx="3" class="panel" />
+    <text x="78" y="381" class="heading">CUDA Graph：CPU 每轮只提交一次可执行图</text>
+    <text x="80" y="427" class="body">CPU</text>
+    <rect x="165" y="402" width="220" height="44" rx="3" class="graph" />
+    <text x="275" y="430" text-anchor="middle" class="body">cudaGraphLaunch</text>
+    <text x="80" y="510" class="body">GPU</text>
+    <rect x="210" y="476" width="180" height="58" rx="3" class="kernel" />
+    <rect x="390" y="476" width="180" height="58" rx="3" class="kernel" />
+    <rect x="570" y="476" width="180" height="58" rx="3" class="kernel" />
+    <rect x="750" y="476" width="180" height="58" rx="3" class="kernel" />
+    <text x="300" y="511" text-anchor="middle" class="body">A</text>
+    <text x="480" y="511" text-anchor="middle" class="body">B</text>
+    <text x="660" y="511" text-anchor="middle" class="body">C</text>
+    <text x="840" y="511" text-anchor="middle" class="body">D</text>
+    <path d="M275 448 L300 470" class="arrow" />
+    <text x="1015" y="501" text-anchor="middle" class="small">按已记录依赖</text>
+    <text x="1015" y="523" text-anchor="middle" class="small">连续取得工作</text>
+
+    <rect x="50" y="585" width="1100" height="42" rx="3" fill="#111111" />
+    <text x="600" y="612" text-anchor="middle" class="inverse">图中空隙与长度仅作解释；真实收益应由 profiler 和目标负载测量</text>
+</svg>
