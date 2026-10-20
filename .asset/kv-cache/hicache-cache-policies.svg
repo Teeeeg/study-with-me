@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="710" viewBox="0 0 1200 710" role="img" aria-labelledby="title desc">
+  <title id="title">HiCache 写入与预取策略的不同取舍</title>
+  <desc id="desc">上半部对比 GPU 到 CPU 的三种写入时机：直接备份、达到热度阈值后备份、淘汰时写回。下半部用同一假想预取进度展示 best_effort 在 GPU 可调度时停止等待，timeout 在预算耗尽时停止等待，wait_complete 等待预取完成。时间关系仅为示意，不是性能测量。</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#FF3B30" /></marker>
+    <style>
+      text { font-family: Avenir Next, Segoe UI, sans-serif; fill: #1D1D1F; }
+      .title { font-size: 30px; font-weight: 700; }
+      .subtitle { font-size: 17px; fill: #52717b; }
+      .heading { font-size: 21px; font-weight: 700; }
+      .body { font-size: 16px; }
+      .label { font-size: 16px; font-weight: 700; }
+      .small { font-size: 14px; fill: #52717b; }
+      .card { fill: #FFFFFF; stroke: #d4dfdc; stroke-width: 2; }
+      .write { fill: none; stroke: #FF3B30; stroke-width: 2.5; stroke-dasharray: 7 6; marker-end: url(#arrow); }
+    </style>
+  </defs>
+  <rect width="1200" height="710" fill="#F5F5F7" />
+  <text x="48" y="50" class="title">写入决定“留什么”，预取决定“等多久”</text>
+  <text x="48" y="80" class="subtitle">更多副本与更长命中前缀，都需要付出容量、I/O 或等待成本</text>
+  <path d="M48 103 H1152" stroke="#D2D2D7" stroke-width="2" />
+  <text x="48" y="137" class="heading">A · GPU → CPU：何时备份 KV？</text>
+
+  <rect x="48" y="156" width="352" height="178" rx="8" class="card" />
+  <text x="68" y="188" class="label">write_through</text>
+  <rect x="68" y="207" width="86" height="40" rx="5" fill="#EAF8EE" />
+  <text x="111" y="233" text-anchor="middle" class="label">GPU KV</text>
+  <path d="M164 227 H282" class="write" />
+  <rect x="292" y="207" width="86" height="40" rx="5" fill="#EEF3FF" />
+  <text x="335" y="233" text-anchor="middle" class="label">CPU 副本</text>
+  <text x="68" y="280" class="body">写入缓存时备份，增加复用机会</text>
+  <text x="68" y="309" class="small">代价：更多写入流量与 L2 占用</text>
+
+  <rect x="424" y="156" width="352" height="178" rx="8" class="card" />
+  <text x="444" y="188" class="label">write_through_selective</text>
+  <rect x="444" y="207" width="86" height="40" rx="5" fill="#EAF8EE" />
+  <text x="487" y="233" text-anchor="middle" class="label">GPU KV</text>
+  <path d="M540 227 H658" class="write" />
+  <rect x="668" y="207" width="86" height="40" rx="5" fill="#EEF3FF" />
+  <text x="711" y="233" text-anchor="middle" class="label">CPU 副本</text>
+  <text x="444" y="280" class="body">达到访问热度条件后才备份</text>
+  <text x="444" y="309" class="small">代价：冷前缀可能没有 CPU 副本</text>
+
+  <rect x="800" y="156" width="352" height="178" rx="8" class="card" />
+  <text x="820" y="188" class="label">write_back</text>
+  <rect x="820" y="207" width="86" height="40" rx="5" fill="#EAF8EE" />
+  <text x="863" y="233" text-anchor="middle" class="label">GPU KV</text>
+  <path d="M916 227 H1034" class="write" />
+  <rect x="1044" y="207" width="86" height="40" rx="5" fill="#EEF3FF" />
+  <text x="1087" y="233" text-anchor="middle" class="label">CPU 副本</text>
+  <text x="820" y="280" class="body">从上层淘汰时再写回</text>
+  <text x="820" y="309" class="small">代价：淘汰路径需要安排搬运</text>
+
+  <text x="48" y="380" class="heading">B · L3 → L2：为了预取，允许等待多久？</text>
+  <rect x="48" y="400" width="1104" height="240" rx="8" class="card" />
+  <text x="72" y="431" class="small">同一假想时间轴；仅演示终止条件，不代表实测耗时或固定快慢排名</text>
+  <text x="326" y="464" class="small">预取开始</text>
+  <text x="505" y="464" class="small">GPU 可调度</text>
+  <text x="738" y="464" class="small">等待预算耗尽</text>
+  <text x="1018" y="464" class="small">预取全部完成</text>
+  <path d="M340 476 V614 M550 476 V614 M790 476 V614 M1090 476 V614" stroke="#D2D2D7" stroke-dasharray="4 5" />
+  <text x="72" y="504" class="label">best_effort</text>
+  <path d="M340 499 H1090" stroke="#E5E5EA" stroke-width="14" />
+  <path d="M340 499 H550" stroke="#34C759" stroke-width="14" />
+  <circle cx="550" cy="499" r="8" fill="#1D1D1F" />
+  <text x="574" y="505" class="body">可计算时停止等待</text>
+  <text x="72" y="550" class="label">timeout</text>
+  <path d="M340 545 H1090" stroke="#E5E5EA" stroke-width="14" />
+  <path d="M340 545 H790" stroke="#8DA8D8" stroke-width="14" />
+  <circle cx="790" cy="545" r="8" fill="#1D1D1F" />
+  <text x="814" y="551" class="body">到期或完成即结束等待</text>
+  <text x="72" y="596" class="label">wait_complete</text>
+  <path d="M340 591 H1090" stroke="#FF9F0A" stroke-width="14" />
+  <circle cx="1090" cy="591" r="8" fill="#1D1D1F" />
+  <text x="600" y="684" text-anchor="middle" class="label">目标是降低请求总成本，而不是单独追求最高命中率；回载可能比重新 Prefill 更慢</text>
+</svg>

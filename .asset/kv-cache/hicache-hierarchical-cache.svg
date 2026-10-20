@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="680" viewBox="0 0 1200 680" role="img" aria-labelledby="title desc">
+  <title id="title">HiCache 三层存储与共享边界</title>
+  <desc id="desc">两个推理实例各有私有的 GPU L1 和 CPU L2，通过配置兼容的 L3 后端共享 KV。绿色实线表示从 L3 经 L2 回载到 L1，红色虚线表示按策略备份。L2 不跨实例共享，L3 共享范围由后端配置决定。</desc>
+  <defs>
+    <marker id="read" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#34C759" /></marker>
+    <marker id="write" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#FF3B30" /></marker>
+    <style>
+      text { font-family: Avenir Next, Segoe UI, sans-serif; fill: #1D1D1F; }
+      .title { font-size: 30px; font-weight: 700; }
+      .subtitle { font-size: 17px; fill: #52717b; }
+      .heading { font-size: 22px; font-weight: 700; }
+      .body { font-size: 16px; }
+      .label { font-size: 16px; font-weight: 700; }
+      .small { font-size: 14px; fill: #52717b; }
+      .card { fill: #FFFFFF; stroke: #d4dfdc; stroke-width: 2; }
+      .read { fill: none; stroke: #34C759; stroke-width: 3; marker-end: url(#read); }
+      .write { fill: none; stroke: #FF3B30; stroke-width: 2.5; stroke-dasharray: 7 6; marker-end: url(#write); }
+    </style>
+  </defs>
+  <rect width="1200" height="680" fill="#F5F5F7" />
+  <text x="48" y="50" class="title">HiCache：前缀离开显存后，仍有机会复用</text>
+  <text x="48" y="80" class="subtitle">L1 / L2 是实例私有缓存；跨实例复用依靠可选的 L3 后端</text>
+  <path d="M48 103 H1152" stroke="#D2D2D7" stroke-width="2" />
+
+  <rect x="48" y="126" width="524" height="298" rx="8" class="card" />
+  <rect x="628" y="126" width="524" height="298" rx="8" class="card" />
+  <text x="72" y="160" class="heading">推理实例 A</text>
+  <text x="652" y="160" class="heading">推理实例 B</text>
+  <text x="548" y="158" text-anchor="end" class="small">本机私有</text>
+  <text x="1128" y="158" text-anchor="end" class="small">本机私有</text>
+
+  <rect x="72" y="182" width="476" height="76" rx="6" fill="#EAF8EE" stroke="#34C759" />
+  <text x="94" y="213" class="heading">L1 · GPU 显存</text>
+  <text x="94" y="240" class="body">热点前缀与当前计算所需 KV</text>
+  <rect x="652" y="182" width="476" height="76" rx="6" fill="#EAF8EE" stroke="#34C759" />
+  <text x="674" y="213" class="heading">L1 · GPU 显存</text>
+  <text x="674" y="240" class="body">Attention 使用前，数据必须就绪</text>
+
+  <path d="M200 324 V263" class="read" />
+  <text x="116" y="299" class="small">回载</text>
+  <path d="M420 263 V324" class="write" />
+  <text x="440" y="299" class="small">备份</text>
+  <path d="M780 324 V263" class="read" />
+  <text x="696" y="299" class="small">回载</text>
+  <path d="M1000 263 V324" class="write" />
+  <text x="1020" y="299" class="small">备份</text>
+
+  <rect x="72" y="330" width="476" height="70" rx="6" fill="#EEF3FF" stroke="#8DA8D8" />
+  <text x="94" y="359" class="heading">L2 · CPU 内存</text>
+  <text x="94" y="384" class="body">更大容量的前缀副本 + L3 预取中转</text>
+  <rect x="652" y="330" width="476" height="70" rx="6" fill="#EEF3FF" stroke="#8DA8D8" />
+  <text x="674" y="359" class="heading">L2 · CPU 内存</text>
+  <text x="674" y="384" class="body">不能直接读取实例 A 的 L2</text>
+
+  <path d="M200 510 V406" class="read" />
+  <path d="M420 406 V510" class="write" />
+  <path d="M780 510 V406" class="read" />
+  <path d="M1000 406 V510" class="write" />
+  <rect x="454" y="444" width="292" height="38" rx="6" fill="#F5F5F7" />
+  <text x="600" y="468" text-anchor="middle" class="label">实线：预取回载　虚线：策略写入</text>
+
+  <rect x="72" y="516" width="1056" height="88" rx="8" class="card" />
+  <rect x="72" y="516" width="8" height="88" rx="4" fill="#FF9F0A" />
+  <text x="100" y="550" class="heading">L3 · 可选文件 / 分布式存储后端</text>
+  <text x="100" y="580" class="body">只有后端范围、命名空间与缓存格式兼容，实例间才可能共享；本地文件不等于全局存储</text>
+  <text x="600" y="646" text-anchor="middle" class="label">同一段 KV 可以保留多层副本；扩大存储容量，不会减少每 token 的 KV 字节数</text>
+</svg>

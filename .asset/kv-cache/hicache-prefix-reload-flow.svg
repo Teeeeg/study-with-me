@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title id="title">HiCache 前缀匹配、回载与后缀计算</title>
+  <desc id="desc">请求先本地匹配，再按需查询 L3，经 CPU 中转回载到 GPU，最后计算未复用后缀。8K token 示例中前 4K 在 L1，中间 2K 仅在 L2，最后 2K 在所有层未命中，所以回载 2K 的 KV，并为最后 2K 执行 Prefill。</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#1D1D1F" /></marker>
+    <marker id="green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#34C759" /></marker>
+    <style>
+      text { font-family: Avenir Next, Segoe UI, sans-serif; fill: #1D1D1F; }
+      .title { font-size: 30px; font-weight: 700; }
+      .subtitle { font-size: 17px; fill: #52717b; }
+      .heading { font-size: 20px; font-weight: 700; }
+      .body { font-size: 16px; }
+      .label { font-size: 16px; font-weight: 700; }
+      .small { font-size: 14px; fill: #52717b; }
+      .card { fill: #FFFFFF; stroke: #d4dfdc; stroke-width: 2; }
+      .flow { fill: none; stroke: #1D1D1F; stroke-width: 2.5; marker-end: url(#arrow); }
+      .reload { fill: none; stroke: #34C759; stroke-width: 3; marker-end: url(#green); }
+    </style>
+  </defs>
+  <rect width="1200" height="720" fill="#F5F5F7" />
+  <text x="48" y="50" class="title">命中只是起点：KV 回到 GPU 后，才能参与计算</text>
+  <text x="48" y="80" class="subtitle">HiRadixTree 管理本地前缀位置；L3 元数据按需查询，而非全量同步</text>
+  <path d="M48 103 H1152" stroke="#D2D2D7" stroke-width="2" />
+
+  <rect x="48" y="132" width="246" height="146" rx="8" class="card" />
+  <rect x="48" y="132" width="246" height="7" rx="3" fill="#8DA8D8" />
+  <text x="68" y="173" class="heading">1 · 本地匹配</text>
+  <text x="68" y="208" class="body">沿连续 token 前缀查找</text>
+  <text x="68" y="236" class="body">区分 L1 与 L2 命中</text>
+  <text x="68" y="260" class="small">实际粒度受页大小约束</text>
+  <path d="M300 205 H328" class="flow" />
+  <rect x="334" y="132" width="246" height="146" rx="8" class="card" />
+  <rect x="334" y="132" width="246" height="7" rx="3" fill="#8DA8D8" />
+  <text x="354" y="173" class="heading">2 · 按需预取 L3</text>
+  <text x="354" y="208" class="body">查询后续连续前缀</text>
+  <text x="354" y="236" class="body">命中后 L3 → L2</text>
+  <text x="354" y="260" class="small">需满足阈值、容量与等待策略</text>
+  <path d="M586 205 H614" class="flow" />
+  <rect x="620" y="132" width="246" height="146" rx="8" class="card" />
+  <rect x="620" y="132" width="246" height="7" rx="3" fill="#34C759" />
+  <text x="640" y="173" class="heading">3 · 回载到 GPU</text>
+  <text x="640" y="208" class="body">L2 → L1，准备可读 KV</text>
+  <text x="640" y="236" class="body">可按层重叠传输与计算</text>
+  <text x="640" y="260" class="small">重叠不等于没有传输成本</text>
+  <path d="M872 205 H900" class="flow" />
+  <rect x="906" y="132" width="246" height="146" rx="8" class="card" />
+  <rect x="906" y="132" width="246" height="7" rx="3" fill="#FF9F0A" />
+  <text x="926" y="173" class="heading">4 · 计算与备份</text>
+  <text x="926" y="208" class="body">只计算未复用后缀</text>
+  <text x="926" y="236" class="body">新 KV 按策略向下备份</text>
+  <text x="926" y="260" class="small">可复用缓存仍需身份兼容</text>
+
+  <rect x="48" y="310" width="1104" height="342" rx="8" class="card" />
+  <text x="72" y="347" class="heading">8K-token Prompt 示例：末尾 2K 在所有层均未命中</text>
+  <text x="72" y="397" class="label">请求前缀</text>
+  <rect x="220" y="370" width="450" height="60" rx="5" fill="#EAF8EE" stroke="#34C759" />
+  <text x="445" y="406" text-anchor="middle" class="label">前 4K · 已在 L1</text>
+  <rect x="670" y="370" width="225" height="60" rx="5" fill="#EEF3FF" stroke="#8DA8D8" />
+  <text x="782" y="406" text-anchor="middle" class="label">中间 2K · 仅在 L2</text>
+  <rect x="895" y="370" width="225" height="60" rx="5" fill="#FFF4E5" stroke="#FF9F0A" />
+  <text x="1007" y="406" text-anchor="middle" class="label">末尾 2K · 未命中</text>
+
+  <path d="M445 438 V499" class="flow" />
+  <path d="M782 438 V499" class="reload" />
+  <path d="M1007 438 V499" class="flow" />
+  <text x="445" y="476" text-anchor="middle" class="small">直接引用</text>
+  <text x="782" y="476" text-anchor="middle" class="small">搬运 KV</text>
+  <text x="1007" y="476" text-anchor="middle" class="small">执行 Prefill</text>
+
+  <text x="72" y="537" class="label">计算所用 KV</text>
+  <rect x="220" y="507" width="450" height="60" rx="5" fill="#EAF8EE" stroke="#34C759" />
+  <text x="445" y="543" text-anchor="middle" class="label">保留原有 GPU KV</text>
+  <rect x="670" y="507" width="225" height="60" rx="5" fill="#EAF8EE" stroke="#34C759" />
+  <text x="782" y="543" text-anchor="middle" class="label">回载 2K 的 KV</text>
+  <rect x="895" y="507" width="225" height="60" rx="5" fill="#FFF4E5" stroke="#FF9F0A" />
+  <text x="1007" y="543" text-anchor="middle" class="label">新算 2K 的 KV</text>
+  <text x="72" y="611" class="body">跳过前 6K 的重复 Prefill，但仍需搬运中间 2K；KV 已存储 ≠ 已取回 ≠ 已可用于计算</text>
+  <text x="600" y="690" text-anchor="middle" class="small">示意按逻辑阶段展开；实际调度可流水重叠，预取不足时最终复用范围可能缩短</text>
+</svg>
