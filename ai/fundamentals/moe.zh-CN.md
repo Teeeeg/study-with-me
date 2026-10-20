@@ -1,7 +1,6 @@
 ---
 title: 图解混合专家模型（MoE）
 description: 从专家、路由和 Top-K 出发，理解负载均衡、专家容量、共享专家，以及总参数与激活参数的区别。
-lang: zh
 ref: moe
 nav_order: 5
 math: true

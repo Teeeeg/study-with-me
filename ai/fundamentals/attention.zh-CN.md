@@ -1,7 +1,6 @@
 ---
 title: 从 Token 到注意力机制
 description: 从分词开始，理解 Transformer、自注意力、QKV、多头注意力、因果掩码、RoPE 与稀疏注意力。
-lang: zh
 ref: attention
 nav_order: 4
 math: true

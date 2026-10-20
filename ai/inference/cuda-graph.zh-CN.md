@@ -1,7 +1,6 @@
 ---
 title: CUDA Graph 原理简介
 description: 理解 CUDA Graph 如何减少重复 GPU 工作流的 CPU 提交开销，以及捕获、实例化、重放的基础原理与使用边界。
-lang: zh
 ref: cuda-graph
 nav_order: 3
 ---

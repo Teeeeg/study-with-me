@@ -1,7 +1,6 @@
 ---
 title: 模型文件夹里都有什么
 description: 以 DeepSeek-V4-Flash 为例，逐个讲解真实 Hugging Face 仓库里的每个文件。
-lang: zh
 ref: weights-files
 nav_order: 2
 ---

@@ -1,49 +1,37 @@
 {% import "clusters.njk" as ui %}
 
-{% set t = i18n[lang] %}
-{% set otherLang = 'zh' if lang == 'en' else 'en' %}
-{% set homePage = collections.all | byRefLang('home', lang) %}
-{% set altPage = collections.all | byRefLang(ref, otherLang) %}
-{% set otherHome = collections.all | byRefLang('home', otherLang) %}
-{% set switchUrl = altPage.url if altPage else otherHome.url %}
-{% set navGroups = collections.docs | clusterGroups(lang, clusters) %}
+{% set navGroups = collections.docs | clusterGroups(clusters) %}
 <!DOCTYPE html>
-<html lang="{{ 'zh-CN' if lang == 'zh' else 'en' }}">
+<html lang="zh-CN">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% if title %}{{ title }} · {% endif %}{{ t.title }}</title>
-  <meta name="description" content="{{ description or t.tagline }}">
+  <title>{% if title %}{{ title }} · {% endif %}知识库</title>
+  <meta name="description" content="{{ description or '关于 AI、系统，以及路上遇到的一切的学习笔记。' }}">
   <link rel="stylesheet" href="{{ '/assets/css/style.css' | url }}?v={{ cssVersion }}">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='14'>📘</text></svg>">
-  {% if altPage %}
-  <link rel="alternate" hreflang="{{ 'zh-CN' if otherLang == 'zh' else 'en' }}" href="{{ altPage.url | url }}">
-  {% endif %}
 </head>
 <body>
-  <a class="skip-link" href="#main">{{ t.skip }}</a>
+  <a class="skip-link" href="#main">跳到正文</a>
 
   <header class="topbar">
     <div class="topbar-inner">
-      <a class="brand" href="{{ homePage.url | url }}">
+      <a class="brand" href="{{ '/' | url }}">
         <span class="brand-mark">SW</span>
-        <span class="brand-name">{{ t.title }}</span>
+        <span class="brand-name">知识库</span>
       </a>
 
-      <nav class="topnav" aria-label="{{ t.sections }}">
-        <a href="{{ homePage.url | url }}"{% if ref == 'home' %} aria-current="page"{% endif %}>{{ t.knowledge or t.home }}</a>
+      <nav class="topnav" aria-label="章节">
+        <a href="{{ '/' | url }}"{% if ref == 'home' %} aria-current="page"{% endif %}>知识</a>
       </nav>
 
-      <a class="lang-switch" href="{{ switchUrl | url }}"
-         title="{{ t.switch_title }}"
-         hreflang="{{ 'zh-CN' if otherLang == 'zh' else 'en' }}">{{ t.switch }}</a>
     </div>
   </header>
 
   <div class="shell">
     <aside class="sidebar">
-      <p class="sidebar-heading">{{ t.contents }}</p>
-      <nav aria-label="{{ t.contents }}">
+      <p class="sidebar-heading">目录</p>
+      <nav aria-label="目录">
         {{ ui.nav(navGroups, page.url) }}
       </nav>
     </aside>
@@ -55,7 +43,7 @@
 
   <footer class="footer">
     <div class="footer-inner">
-      <span>{{ t.title }}</span>
+      <span>知识库</span>
     </div>
   </footer>
 

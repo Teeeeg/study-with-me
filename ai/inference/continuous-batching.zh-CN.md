@@ -1,7 +1,6 @@
 ---
 title: Continuous Batching 原理简介
 description: 从静态批次的空缺理解迭代级调度，再连接 token 预算、KV Cache、Chunked Prefill 与吞吐和延迟的权衡。
-lang: zh
 ref: continuous-batching
 nav_order: 4
 math: true

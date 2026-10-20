@@ -2,12 +2,11 @@
 layout: base.njk
 ---
 {% import "clusters.njk" as ui %}
-{% set t = i18n[lang] %}
-{% set homeGroups = collections.docs | clusterGroups(lang, clusters) %}
+{% set homeGroups = collections.docs | clusterGroups(clusters) %}
 
 <div class="hero">
-  <h1>{{ t.title }}</h1>
-  <p class="hero-tagline">{{ t.tagline }}</p>
+  <h1>知识库</h1>
+  <p class="hero-tagline">关于 AI、系统，以及路上遇到的一切的学习笔记。</p>
 </div>
 
 <div class="prose intro">

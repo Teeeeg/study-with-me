@@ -1,7 +1,6 @@
 ---
 title: FlashAttention 原理简介
 description: 从显存读写、分块和 Online Softmax 理解 FlashAttention，再深入反向重算、工作划分与 Hopper 异步流水线。
-lang: zh
 ref: flash-attention
 nav_order: 3
 math: true

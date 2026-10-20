@@ -1,7 +1,6 @@
 ---
 title: 大模型权重格式与数据类型
 description: SafeTensors 与 GGUF、BF16 与 FP16，以及如何估算检查点体积。
-lang: zh
 ref: weights-and-types
 nav_order: 1
 math: true

@@ -42,7 +42,6 @@ export default function (eleventyConfig) {
 
   // Data-cascade defaults. Front matter overrides all of these.
   eleventyConfig.addGlobalData("layout", "doc.njk");
-  eleventyConfig.addGlobalData("lang", "en");
   eleventyConfig.addGlobalData("nav_order", 100);
 
   // Pages serves CSS with max-age=600, so fingerprint the URL to avoid
@@ -62,37 +61,30 @@ export default function (eleventyConfig) {
       .sort((a, b) => (a.data.nav_order ?? 100) - (b.data.nav_order ?? 100)),
   );
 
-  eleventyConfig.addFilter("byRefLang", (items, ref, lang) =>
-    (items ?? []).find(
-      (item) => item.data.ref === ref && item.data.lang === lang,
-    ),
-  );
-
   /**
    * Clusters listed in _data/clusters.yml come first, in file order. Any folder
    * that is not listed is appended afterwards and titled from its folder name,
    * so a new section appears without touching the config.
    */
-  eleventyConfig.addFilter("clusterGroups", (docs, lang, clusters = []) => {
-    const inLang = (docs ?? []).filter((doc) => doc.data.lang === lang);
+  eleventyConfig.addFilter("clusterGroups", (docs = [], clusters = []) => {
     const groups = [];
     const listed = new Set();
 
     for (const cluster of clusters) {
-      const items = inLang.filter((doc) => doc.data.cluster === cluster.dir);
+      const items = docs.filter((doc) => doc.data.cluster === cluster.dir);
       if (!items.length) continue;
       listed.add(cluster.dir);
       groups.push({
         dir: cluster.dir,
         icon: cluster.icon,
-        title: cluster.title?.[lang] ?? leafTitle(cluster.dir),
-        summary: cluster.summary?.[lang],
+        title: cluster.title ?? leafTitle(cluster.dir),
+        summary: cluster.summary,
         items,
       });
     }
 
     const extras = new Map();
-    for (const doc of inLang) {
+    for (const doc of docs) {
       const dir = doc.data.cluster;
       if (listed.has(dir)) continue;
       if (!extras.has(dir)) extras.set(dir, []);

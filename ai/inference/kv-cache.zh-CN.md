@@ -1,7 +1,6 @@
 ---
 title: KV Cache 原理简介
 description: 理解 KV Cache 如何避免自回归生成中的重复计算，以及它带来的显存开销与优化方向。
-lang: zh
 ref: kv-cache
 nav_order: 2
 math: true

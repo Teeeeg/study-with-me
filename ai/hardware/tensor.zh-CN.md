@@ -1,7 +1,6 @@
 ---
 title: CUDA Core 与 Tensor Core
 description: 深入理解NVIDIA GPU中的CUDA Core和Tensor Core的架构、工作原理及其关系
-lang: zh
 ref: tensor
 nav_order: 2
 math: true

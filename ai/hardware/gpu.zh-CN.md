@@ -1,7 +1,6 @@
 ---
 title: GPU 性能、通信与调度
 description: 从性能指标、NVLink 与 PCIe 通信，到集群中的拓扑感知调度。
-lang: zh
 ref: gpu
 nav_order: 1
 math: true

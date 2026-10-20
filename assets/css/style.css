@@ -116,21 +116,6 @@ a:hover { text-decoration: underline; }
 .topnav a:hover { color: var(--fg); text-decoration: none; }
 .topnav a[aria-current="page"] { color: var(--fg); font-weight: 600; }
 
-.lang-switch {
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 4px 14px;
-  font-size: 13.5px;
-  color: var(--fg-muted);
-  background: var(--bg-soft);
-  white-space: nowrap;
-}
-.lang-switch:hover {
-  color: var(--accent);
-  border-color: var(--accent);
-  text-decoration: none;
-}
-
 /* ---------- shell ---------- */
 
 .shell {

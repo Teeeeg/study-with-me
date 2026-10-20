@@ -1,7 +1,6 @@
 ---
 title: Scaling Laws：参数、数据与算力
 description: 理解语言模型性能如何随参数量、训练数据和计算预算缩放，以及 Kaplan、Chinchilla 与 MoE 带来的工程结论。
-lang: zh
 ref: scaling-laws
 nav_order: 6
 ---

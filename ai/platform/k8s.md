@@ -1,7 +1,6 @@
 ---
 title: Kubernetes GPU调度问题
 description: GPU调度的三大挑战：碎片化、拓扑感知与Gang Scheduling
-lang: zh
 ref: k8s-gpu-scheduling
 nav_order: 3
 ---
